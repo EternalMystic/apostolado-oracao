@@ -12,7 +12,13 @@ from utils.ui import inject_css
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.crud_ui import mesclar_por_id
-from utils.data_manager import ler_entregas, ler_membros, salvar_entregas
+from utils.data_manager import (
+    COL_ENTREGAS,
+    ler_entregas,
+    ler_membros,
+    preparar_dataframe,
+    salvar_entregas,
+)
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
 from utils.opcoes import ENTREGUE
 
@@ -116,5 +122,16 @@ pendentes = len(edited[edited["entregue"].astype(str).str.upper() != "S"])
 st.metric("Visitas pendentes (nesta lista)", pendentes)
 
 if st.button("💾 Salvar rota", type="primary"):
-    salvar_entregas(mesclar_por_id(df_full, edited, filtrado=filtrado))
-    st.success("Rota salva.")
+    try:
+        merged = mesclar_por_id(df_full, edited, filtrado=filtrado)
+        merged = preparar_dataframe(
+            merged,
+            COL_ENTREGAS,
+            id_col="id",
+            colunas_data=["data_entrega"],
+        )
+        salvar_entregas(merged)
+        st.success("Rota salva no apostolado.xlsx.")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Erro ao salvar: {e}")

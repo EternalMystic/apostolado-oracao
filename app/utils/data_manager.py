@@ -123,8 +123,13 @@ def ler_membros_df() -> pd.DataFrame:
 
 
 def salvar_membros_df(df: pd.DataFrame) -> None:
-    df = _normalizar_datas_df(df, ["nasc", "ingresso"])
-    _salvar_generico(SHEET_MEMBROS, df, COL_MEMBROS)
+    _salvar_generico(
+        SHEET_MEMBROS,
+        df,
+        COL_MEMBROS,
+        id_col="id",
+        colunas_data=["nasc", "ingresso"],
+    )
 
 
 def _normalizar_datas_df(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
@@ -132,15 +137,7 @@ def _normalizar_datas_df(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     for c in cols:
         if c not in out.columns:
             continue
-        for i in out.index:
-            v = out.at[i, c]
-            if v is None or v == "" or (isinstance(v, float) and pd.isna(v)):
-                out.at[i, c] = None
-            elif isinstance(v, datetime):
-                out.at[i, c] = v.date()
-            elif not isinstance(v, date):
-                ts = pd.to_datetime(v, errors="coerce")
-                out.at[i, c] = ts.date() if pd.notna(ts) else None
+        out[c] = pd.to_datetime(out[c], errors="coerce")
     return out
 
 
@@ -190,7 +187,54 @@ def _ler_generico(sheet: str, cols: list[str]) -> pd.DataFrame:
     return df[cols]
 
 
-def _salvar_generico(sheet: str, df: pd.DataFrame, cols: list[str]) -> None:
+def _remover_linhas_vazias(
+    df: pd.DataFrame, cols: list[str], id_col: str | None = None
+) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    def tem_conteudo(row: pd.Series) -> bool:
+        for c in cols:
+            if c == id_col:
+                continue
+            v = row.get(c)
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                continue
+            if str(v).strip():
+                return True
+        return False
+
+    mask = df.apply(tem_conteudo, axis=1)
+    return df[mask].reset_index(drop=True)
+
+
+def preparar_dataframe(
+    df: pd.DataFrame,
+    cols: list[str],
+    *,
+    id_col: str | None = None,
+    colunas_data: list[str] | None = None,
+) -> pd.DataFrame:
+    """Normaliza tipos e remove linhas vazias antes de gravar no Excel."""
+    out = df.reindex(columns=cols).copy()
+    out = _remover_linhas_vazias(out, cols, id_col=id_col)
+    if colunas_data:
+        out = _normalizar_datas_df(out, colunas_data)
+    if id_col and id_col in out.columns:
+        nums = pd.to_numeric(out[id_col], errors="coerce")
+        out[id_col] = nums.astype("Int64")
+    return out
+
+
+def _salvar_generico(
+    sheet: str,
+    df: pd.DataFrame,
+    cols: list[str],
+    *,
+    id_col: str | None = None,
+    colunas_data: list[str] | None = None,
+) -> None:
+    df = preparar_dataframe(df, cols, id_col=id_col, colunas_data=colunas_data)
     _salvar_aba(sheet, df, cols)
 
 
@@ -199,7 +243,13 @@ def ler_entregas() -> pd.DataFrame:
 
 
 def salvar_entregas(df: pd.DataFrame) -> None:
-    _salvar_generico(SHEET_ENTREGAS, df, COL_ENTREGAS)
+    _salvar_generico(
+        SHEET_ENTREGAS,
+        df,
+        COL_ENTREGAS,
+        id_col="id",
+        colunas_data=["data_entrega"],
+    )
 
 
 def ler_visitas() -> pd.DataFrame:
@@ -207,7 +257,13 @@ def ler_visitas() -> pd.DataFrame:
 
 
 def salvar_visitas(df: pd.DataFrame) -> None:
-    _salvar_generico(SHEET_VISITAS, df, COL_VISITAS)
+    _salvar_generico(
+        SHEET_VISITAS,
+        df,
+        COL_VISITAS,
+        id_col="id",
+        colunas_data=["data_visita"],
+    )
 
 
 def ler_consagracoes() -> pd.DataFrame:
@@ -215,7 +271,13 @@ def ler_consagracoes() -> pd.DataFrame:
 
 
 def salvar_consagracoes(df: pd.DataFrame) -> None:
-    _salvar_generico(SHEET_CONSAGRACOES, df, COL_CONSAGRACOES)
+    _salvar_generico(
+        SHEET_CONSAGRACOES,
+        df,
+        COL_CONSAGRACOES,
+        id_col="id",
+        colunas_data=["data_consagracao"],
+    )
 
 
 def ler_intencoes() -> pd.DataFrame:
@@ -223,7 +285,13 @@ def ler_intencoes() -> pd.DataFrame:
 
 
 def salvar_intencoes(df: pd.DataFrame) -> None:
-    _salvar_generico(SHEET_INTENCOES, df, COL_INTENCOES)
+    _salvar_generico(
+        SHEET_INTENCOES,
+        df,
+        COL_INTENCOES,
+        id_col="id",
+        colunas_data=["data"],
+    )
 
 
 def ler_agenda() -> pd.DataFrame:
@@ -231,7 +299,13 @@ def ler_agenda() -> pd.DataFrame:
 
 
 def salvar_agenda(df: pd.DataFrame) -> None:
-    _salvar_generico(SHEET_AGENDA, df, COL_AGENDA)
+    _salvar_generico(
+        SHEET_AGENDA,
+        df,
+        COL_AGENDA,
+        id_col="id",
+        colunas_data=["data"],
+    )
 
 
 def ler_config() -> dict[str, str]:
@@ -271,7 +345,12 @@ def ler_memorial() -> pd.DataFrame:
 
 
 def salvar_memorial(df: pd.DataFrame) -> None:
-    _salvar_generico(SHEET_MEMORIAL, df, COL_MEMORIAL)
+    _salvar_generico(
+        SHEET_MEMORIAL,
+        df,
+        COL_MEMORIAL,
+        colunas_data=["nasc", "falecimento"],
+    )
 
 
 def _idade_anos(nasc: date | None) -> int | None:
