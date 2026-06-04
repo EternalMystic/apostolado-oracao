@@ -56,4 +56,7 @@ with tab2:
     )
     if membros:
         st.markdown("**Membros ativos (referência de ID):**")
-        st.write(", ".join(f"{k}={v}" for k, v in list(membros.items())[:15]) + ("…" if len(membros) > 15 else "")))
+        refs = ", ".join(f"{k}={v}" for k, v in list(membros.items())[:15])
+        if len(membros) > 15:
+            refs += "…"
+        st.write(refs)

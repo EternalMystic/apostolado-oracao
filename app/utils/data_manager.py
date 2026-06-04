@@ -11,7 +11,10 @@ import pandas as pd
 try:
     from . import tabelas_apostolado as _ta
 except ImportError:
-    from utils import tabelas_apostolado as _ta
+    try:
+        from utils import tabelas_apostolado as _ta
+    except ImportError:
+        import tabelas_apostolado as _ta
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT / "data"
@@ -240,7 +243,15 @@ def ler_membros() -> list[tuple]:
 def salvar_membros(membros: list[tuple]) -> None:
     rows = []
     for m in membros:
-        rows.append(dict(zip(COL_MEMBROS, m)))
+        if len(m) >= len(COL_MEMBROS):
+            rows.append(dict(zip(COL_MEMBROS, m[: len(COL_MEMBROS)])))
+        else:
+            row = dict(zip(COL_MEMBROS[:14], m[:14]))
+            row["tipo_membro"] = "Associado"
+            row["comunidade"] = row.get("bairro", "") or ""
+            row["data_inscricao"] = row.get("ingresso")
+            row["fita_consagracao"] = "Não"
+            rows.append(row)
     salvar_membros_df(pd.DataFrame(rows, columns=COL_MEMBROS))
 
 

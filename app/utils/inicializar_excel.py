@@ -42,7 +42,10 @@ from data_manager import (
 try:
     from . import tabelas_apostolado as _ta
 except ImportError:
-    from utils import tabelas_apostolado as _ta
+    try:
+        from utils import tabelas_apostolado as _ta
+    except ImportError:
+        import tabelas_apostolado as _ta
 
 COR_ROXO = "6A1B9A"
 
@@ -193,7 +196,7 @@ def criar_workbook_inicial(dest: Path | None = None) -> Path:
 def main():
     path = criar_workbook_inicial()
     print(f"Excel criado: {path}")
-    print(f"Membros: {len(MEMBROS_SEED)} · Abas: {len(sheets)}")
+    print(f"Membros: {len(MEMBROS_SEED)} · Abas: 14")
 
 
 if __name__ == "__main__":

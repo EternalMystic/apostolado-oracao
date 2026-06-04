@@ -15,6 +15,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r app/requirements.txt
+      - run: python scripts/check_syntax.py
       - run: python app/utils/inicializar_excel.py
-      - run: python -c "import sys; sys.path.insert(0,'app'); from utils.data_manager import ler_membros; assert len(ler_membros())>=56"
+      - run: python -c "import sys; sys.path.insert(0,'app'); from utils.data_manager import ler_membros, ler_diretoria; assert len(ler_membros())>=56; assert not ler_diretoria().empty"
       - run: python scripts/test_crud_excel.py

@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "app"))
 
 import utils.data_manager as dm  # noqa: E402
+from utils import tabelas_apostolado as ta  # noqa: E402
 from utils.crud_ui import mesclar_por_id, mesclar_por_rid, garantir_rid  # noqa: E402
 
 MARCADOR = "__TESTE_CRUD__"
@@ -91,6 +92,10 @@ def test_tabela_id(ler, salvar, cols, id_val: int) -> None:
         row["intencao"] = MARCADOR
     if "titulo" in cols:
         row["titulo"] = MARCADOR
+    if "cargo" in cols:
+        row["cargo"] = MARCADOR
+    if "nome" in cols:
+        row["nome"] = MARCADOR
     if "membro_nome" in cols:
         row["membro_nome"] = MARCADOR
     if "item" in cols:
@@ -192,6 +197,12 @@ def main() -> None:
     test_tabela_id(dm.ler_consagracoes, dm.salvar_consagracoes, dm.COL_CONSAGRACOES, 99903)
     test_tabela_id(dm.ler_intencoes, dm.salvar_intencoes, dm.COL_INTENCOES, 99904)
     test_tabela_id(dm.ler_agenda, dm.salvar_agenda, dm.COL_AGENDA, 99905)
+    test_tabela_id(dm.ler_diretoria, dm.salvar_diretoria, ta.COL_DIRETORIA, 99906)
+    test_tabela_id(dm.ler_zeladores, dm.salvar_zeladores, ta.COL_ZELADORES, 99907)
+    test_tabela_id(dm.ler_intencoes_papa, dm.salvar_intencoes_papa, ta.COL_INTENCOES_PAPA, 99908)
+    test_tabela_id(dm.ler_centros, dm.salvar_centros, ta.COL_CENTROS, 99909)
+    test_tabela_id(dm.ler_comunicacoes, dm.salvar_comunicacoes, ta.COL_COMUNICACOES, 99910)
+    test_tabela_id(dm.ler_reunioes, dm.salvar_reunioes, ta.COL_REUNIOES, 99911)
     print("OK — todos os CRUDs gravam e leem o Excel corretamente.")
 
 
