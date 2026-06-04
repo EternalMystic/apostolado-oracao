@@ -17,7 +17,13 @@ from utils.data_manager import (
     membros_sem_telefone,
     total_por_situacao,
 )
-from utils.ui import atalhos_principais, inject_css, rodape, sidebar_minima
+from utils.ui import (
+    atalhos_principais,
+    dica_app_celular,
+    inject_css,
+    rodape,
+    sidebar_minima,
+)
 
 st.set_page_config(
     page_title="Apostolado da Oração",
@@ -37,10 +43,15 @@ sidebar_minima(
     f"{cfg.get('cidade', 'Nova Odessa')} – SP",
 )
 
+dica_app_celular()
+
 st.title("Início")
 st.markdown(f"**{date.today().strftime('%d/%m/%Y')}**")
 
 atalhos_principais()
+
+st.divider()
+st.markdown("### Resumo")
 
 totais = total_por_situacao()
 ativos = totais.get("Ativo", 0) + totais.get("Ativo (presumido)", 0)
@@ -52,6 +63,7 @@ c2.metric("Aniversários (7 dias)", len(aniv))
 c3.metric("Sem telefone", len(membros_sem_telefone()))
 
 if aniv:
+    st.markdown("#### Próximos aniversários")
     for a in aniv:
         linha = f"**{a['nome']}** · {a['proximo'].strftime('%d/%m')}"
         if a["dias"] == 0:
@@ -63,6 +75,6 @@ if aniv:
         st.markdown(linha)
 
 if inconsistencias_criticas_abertas():
-    st.warning("Cadastro com pendências → menu **Inconsistências**")
+    st.warning("Cadastro com pendências → **Inconsistências** no menu")
 
 rodape()

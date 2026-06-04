@@ -175,7 +175,10 @@ def tabela_crud(
     if filtrado:
         st.warning("Filtro ativo: linhas ocultas não serão apagadas ao salvar.")
 
-    st.caption(f"{len(exibir)} linha(s) · Total no cadastro: {len(base)}")
+    st.caption(
+        f"{len(exibir)} linha(s) visíveis · {len(base)} no cadastro · "
+        "Toque na célula para editar"
+    )
 
     edited = st.data_editor(
         exibir[cols_editor],

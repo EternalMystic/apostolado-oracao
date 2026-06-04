@@ -1,4 +1,4 @@
-"""Visual do Apostolado — responsivo (celular, tablet e desktop)."""
+"""Visual do Apostolado — webapp responsivo (celular nativo + desktop)."""
 from __future__ import annotations
 
 import streamlit as st
@@ -10,10 +10,79 @@ COR_TEXTO = "#1A1A1A"
 COR_LILAS = "#B388FF"
 COR_LILAS_CLARO = "#F3E5F5"
 
+ATALHOS_APP = [
+    ("pages/2_🔍_Consulta_Rápida.py", "🔍", "Buscar membro"),
+    ("pages/4_🎂_Aniversários.py", "🎂", "Aniversários"),
+    ("pages/3_🗺️_Rota_de_Visitas.py", "🗺️", "Rota de visitas"),
+    ("pages/1_📋_Membros.py", "📋", "Membros"),
+    ("pages/6_📦_Entregas.py", "📦", "Entregas"),
+    ("pages/14_🏠_Visitas.py", "🏠", "Visitas"),
+    ("pages/7_🙏_Intenções.py", "🙏", "Intenções"),
+    ("pages/8_📅_Agenda.py", "📅", "Agenda"),
+    ("pages/9_📊_Relatórios.py", "📊", "Relatórios"),
+]
+
+
+def _css_pwa_nativo() -> str:
+    return f"""
+    /* Sensação de app nativo */
+    html {{
+        -webkit-text-size-adjust: 100%;
+        touch-action: manipulation;
+    }}
+    .stApp {{
+        -webkit-tap-highlight-color: rgba(179, 136, 255, 0.35);
+    }}
+    [data-testid="stHeader"] {{
+        background: transparent !important;
+    }}
+    @media (max-width: 768px) {{
+        [data-testid="stSidebarCollapsedControl"],
+        [data-testid="collapsedControl"] {{
+            min-width: 48px !important;
+            min-height: 48px !important;
+        }}
+        .main .block-container {{
+            padding-bottom: max(1.25rem, env(safe-area-inset-bottom)) !important;
+        }}
+        [data-testid="stPageLink-Button"] {{
+            min-height: 3.5rem !important;
+            border-radius: 14px !important;
+            box-shadow: 0 2px 8px rgba(62, 16, 120, 0.15) !important;
+        }}
+        [data-testid="stPageLink-Button"]:active {{
+            transform: scale(0.98);
+            background: {COR_LILAS_CLARO} !important;
+        }}
+        .stButton > button:active,
+        button[kind="primary"]:active {{
+            transform: scale(0.98);
+        }}
+        div[data-testid="metric-container"] {{
+            min-height: 4.5rem !important;
+        }}
+        .dica-app {{
+            background: {COR_LILAS_CLARO} !important;
+            border: 2px solid {COR_PADRAO} !important;
+            border-radius: 12px !important;
+            padding: 0.85rem 1rem !important;
+            margin-bottom: 1rem !important;
+            font-size: 0.95rem !important;
+            color: {COR_TEXTO} !important;
+        }}
+    }}
+    @media (min-width: 769px) {{
+        .menu-app-desktop {{
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 0.65rem !important;
+        }}
+    }}
+    """
+
 
 def _css_responsivo() -> str:
     return """
-    /* Base: evita barra horizontal e respeita notch (iPhone) */
     .stApp,
     [data-testid="stAppViewContainer"],
     .main {
@@ -28,7 +97,6 @@ def _css_responsivo() -> str:
         box-sizing: border-box !important;
     }
 
-    /* Colunas Streamlit → empilham no celular */
     @media (max-width: 768px) {
         [data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
@@ -55,20 +123,21 @@ def _css_responsivo() -> str:
             margin-bottom: 0.35rem !important;
         }
         [data-testid="stPageLink-Button"] {
-            min-height: 3.1rem !important;
-            font-size: 1.05rem !important;
+            min-height: 3.5rem !important;
+            font-size: 1.08rem !important;
         }
         .stButton > button,
         button[kind="primary"] {
-            min-height: 3.1rem !important;
+            min-height: 3.25rem !important;
             width: 100% !important;
         }
         [data-testid="stSidebar"] {
             min-width: min(88vw, 300px) !important;
         }
         [data-testid="stSidebarNav"] a {
-            font-size: 1rem !important;
-            padding: 0.35rem 0 !important;
+            font-size: 1.05rem !important;
+            padding: 0.5rem 0 !important;
+            min-height: 2.75rem !important;
         }
         [data-testid="stDataEditor"] > div,
         [data-testid="stDataFrame"] > div {
@@ -79,54 +148,35 @@ def _css_responsivo() -> str:
         [data-testid="stSelectbox"] > div {
             width: 100% !important;
         }
-        .stTextInput input {
-            font-size: 16px !important; /* evita zoom forçado no iOS */
-        }
-        [data-testid="stExpander"] details {
-            font-size: 0.95rem !important;
+        .stTextInput input,
+        .stSelectbox select,
+        textarea {
+            font-size: 16px !important;
         }
     }
 
-    /* Celular pequeno */
     @media (max-width: 480px) {
         .main .block-container {
             border-radius: 12px !important;
             border-width: 2px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
         }
         .main .block-container h1 {
             font-size: 1.3rem !important;
         }
-        [data-testid="stToolbar"] {
-            padding: 0.15rem !important;
-        }
     }
 
-    /* Tablet */
     @media (min-width: 769px) and (max-width: 1024px) {
         .main .block-container {
             max-width: min(960px, calc(100vw - 2rem)) !important;
         }
-        [data-testid="stHorizontalBlock"] {
-            flex-wrap: wrap !important;
-            gap: 0.75rem !important;
-        }
     }
 
-    /* Desktop grande */
     @media (min-width: 1200px) {
         .main .block-container {
             max-width: 1100px !important;
         }
     }
-    @media (min-width: 1600px) {
-        .main .block-container {
-            max-width: 1200px !important;
-        }
-    }
 
-    /* Áreas seguras (celular com entalhe) */
     @supports (padding: max(0px)) {
         .main .block-container {
             padding-left: max(0.75rem, env(safe-area-inset-left)) !important;
@@ -136,10 +186,28 @@ def _css_responsivo() -> str:
     """
 
 
+def inject_pwa_meta(cor: str = COR_PADRAO) -> None:
+    """Meta tags para instalar como app na tela inicial do celular."""
+    st.markdown(
+        f"""
+<link rel="manifest" href="app/static/manifest.json">
+<link rel="icon" href="app/static/icon-192.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Apostolado">
+<meta name="theme-color" content="{cor}">
+""",
+        unsafe_allow_html=True,
+    )
+
+
 def inject_css(cor: str = COR_PADRAO) -> None:
+    inject_pwa_meta(cor)
     try:
         st.html(
-            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
+            '<meta name="viewport" content="width=device-width, initial-scale=1, '
+            'maximum-scale=5, viewport-fit=cover">',
             height=0,
         )
     except Exception:
@@ -220,11 +288,11 @@ def inject_css(cor: str = COR_PADRAO) -> None:
         background: {COR_BRANCO} !important;
         color: {cor} !important;
         border: 3px solid {cor} !important;
-        border-radius: 12px !important;
-        min-height: 3.2rem !important;
-        font-size: clamp(0.95rem, 2.5vw, 1.15rem) !important;
+        border-radius: 14px !important;
+        min-height: 3.25rem !important;
+        font-size: clamp(1rem, 2.5vw, 1.12rem) !important;
         font-weight: 800 !important;
-        transition: background 0.15s ease !important;
+        transition: background 0.12s ease, transform 0.08s ease !important;
     }}
     [data-testid="stPageLink-Button"]:hover {{
         background: {COR_LILAS_CLARO} !important;
@@ -282,6 +350,7 @@ def inject_css(cor: str = COR_PADRAO) -> None:
     }}
 
     {_css_responsivo()}
+    {_css_pwa_nativo()}
 </style>
 """,
         unsafe_allow_html=True,
@@ -289,7 +358,6 @@ def inject_css(cor: str = COR_PADRAO) -> None:
 
 
 def inject_login_css(cor: str = COR_PADRAO) -> None:
-    """Login: título e paróquia em branco no roxo; formulário em cartão branco."""
     inject_css(cor)
     st.markdown(
         f"""
@@ -313,9 +381,7 @@ def inject_login_css(cor: str = COR_PADRAO) -> None:
         font-size: clamp(1.45rem, 6vw, 2.15rem) !important;
         font-weight: 800 !important;
         margin: 0 0 0.4rem 0 !important;
-        letter-spacing: 0.02em !important;
         text-shadow: 0 2px 12px rgba(0,0,0,0.35) !important;
-        line-height: 1.2 !important;
     }}
     .login-sub {{
         text-align: center !important;
@@ -323,7 +389,6 @@ def inject_login_css(cor: str = COR_PADRAO) -> None:
         font-weight: 600 !important;
         margin: 0 0 clamp(1.25rem, 5vw, 2rem) 0 !important;
         text-shadow: 0 1px 8px rgba(0,0,0,0.3) !important;
-        padding: 0 0.5rem !important;
     }}
 
     div[data-testid="stTextInput"] {{
@@ -332,8 +397,6 @@ def inject_login_css(cor: str = COR_PADRAO) -> None:
         padding: 0.75rem 1rem 1.1rem !important;
         border: 3px solid {COR_LILAS} !important;
         box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
     }}
     div[data-testid="stTextInput"] label {{
         color: {cor} !important;
@@ -342,23 +405,10 @@ def inject_login_css(cor: str = COR_PADRAO) -> None:
     div[data-testid="stTextInput"] input {{
         font-size: 16px !important;
     }}
-
-    div[data-testid="stButton"] {{
-        margin-top: 0.5rem !important;
-        width: 100% !important;
-    }}
     div[data-testid="stButton"] button {{
-        border-radius: 12px !important;
-        min-height: 3.35rem !important;
-        font-size: 1.15rem !important;
+        min-height: 3.5rem !important;
+        font-size: 1.2rem !important;
         width: 100% !important;
-    }}
-
-    @media (max-width: 768px) {{
-        .main .block-container {{
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-        }}
     }}
 </style>
 """,
@@ -366,33 +416,28 @@ def inject_login_css(cor: str = COR_PADRAO) -> None:
     )
 
 
+def dica_app_celular() -> None:
+    if "dica_app_vista" not in st.session_state:
+        st.session_state.dica_app_vista = True
+        st.markdown(
+            '<p class="dica-app">📱 <b>No celular:</b> toque <b>☰</b> para o menu. '
+            "Para atalho na tela inicial: menu do navegador → "
+            "<b>Adicionar à tela inicial</b> / <b>Instalar app</b>.</p>",
+            unsafe_allow_html=True,
+        )
+
+
 def sidebar_minima(paroquia: str, cidade: str) -> None:
     st.sidebar.markdown(f"## {paroquia}")
     st.sidebar.markdown(cidade)
+    st.sidebar.caption("☰ Menu com todas as páginas")
 
 
 def atalhos_principais() -> None:
-    """Menu em coluna no celular (via CSS) e em 3 colunas no desktop."""
-    st.markdown("## Menu rápido")
-    links = [
-        ("pages/2_🔍_Consulta_Rápida.py", "Buscar membro"),
-        ("pages/4_🎂_Aniversários.py", "Aniversários"),
-        ("pages/1_📋_Membros.py", "Membros"),
-        ("pages/3_🗺️_Rota_de_Visitas.py", "Rota de visitas"),
-        ("pages/14_🏠_Visitas.py", "Visitas"),
-        ("pages/6_📦_Entregas.py", "Entregas"),
-        ("pages/9_📊_Relatórios.py", "Relatórios"),
-    ]
-    n = len(links)
-    per_col = (n + 2) // 3
-    chunks = [links[i : i + per_col] for i in range(0, n, per_col)]
-    while len(chunks) < 3:
-        chunks.append([])
-    c1, c2, c3 = st.columns(3)
-    for col, chunk in zip((c1, c2, c3), chunks):
-        with col:
-            for path, label in chunk:
-                st.page_link(path, label=label, use_container_width=True)
+    """Botões grandes estilo app — uma coluna no celular, grade no desktop."""
+    st.markdown("## Acesso rápido")
+    for path, icone, titulo in ATALHOS_APP:
+        st.page_link(path, label=f"{icone}  {titulo}", use_container_width=True)
 
 
 def rodape() -> None:

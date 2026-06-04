@@ -1,0 +1,19 @@
+{
+  "name": "Apostolado da Oração",
+  "short_name": "Apostolado",
+  "description": "Sistema pastoral — Paróquia São Jorge, Nova Odessa",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3E1078",
+  "theme_color": "#6A1B9A",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "app/static/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

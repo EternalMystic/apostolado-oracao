@@ -16,8 +16,13 @@ require_login()
 inject_css()
 st.title("🔍 Consulta Rápida")
 
-q = st.text_input("Buscar", placeholder="Nome, telefone ou bairro")
+q = st.text_input(
+    "Buscar membro",
+    placeholder="Nome, telefone ou bairro",
+    label_visibility="visible",
+)
 if not q:
+    st.info("Digite acima para buscar.")
     st.stop()
 
 q_lower = q.lower()
