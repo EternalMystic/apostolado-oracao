@@ -16,13 +16,18 @@ st.title("📝 Referência")
 
 st.markdown(
     """
-| Ação | Onde |
-|------|------|
-| Buscar membro | **Consulta Rápida** ou **Membros** |
-| Visita / entrega | **Rota de Visitas** — marque **S** quando entregar |
-| Aniversário | **Aniversários** |
-| Corrigir cadastro | **Inconsistências** — marque **Sim** quando resolver |
-| Exportar dados | **Relatórios** |
+| Tabela | Onde editar (CRUD) |
+|--------|-------------------|
+| Membros | **Membros** — ➕ Nova linha · editar · excluir linha · **Salvar** |
+| Entregas / rota | **Entregas** ou **Rota de Visitas** |
+| Visitas | **Visitas** |
+| Consagrações | **Consagrações** |
+| Intenções | **Intenções** |
+| Agenda | **Agenda** |
+| Inconsistências | **Inconsistências** |
+| Memorial | **Memorial** |
+| Configuração | **Configurações** |
+| Exportar | **Relatórios** |
 
 **Dados:** `data/apostolado.xlsx` · **Backup:** pasta `backups/`
 

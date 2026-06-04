@@ -118,6 +118,32 @@ def _membro_tuple(row: pd.Series) -> tuple:
     )
 
 
+def ler_membros_df() -> pd.DataFrame:
+    return _ler_generico(SHEET_MEMBROS, COL_MEMBROS)
+
+
+def salvar_membros_df(df: pd.DataFrame) -> None:
+    df = _normalizar_datas_df(df, ["nasc", "ingresso"])
+    _salvar_generico(SHEET_MEMBROS, df, COL_MEMBROS)
+
+
+def _normalizar_datas_df(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    out = df.copy()
+    for c in cols:
+        if c not in out.columns:
+            continue
+        for i in out.index:
+            v = out.at[i, c]
+            if v is None or v == "" or (isinstance(v, float) and pd.isna(v)):
+                out.at[i, c] = None
+            elif isinstance(v, datetime):
+                out.at[i, c] = v.date()
+            elif not isinstance(v, date):
+                ts = pd.to_datetime(v, errors="coerce")
+                out.at[i, c] = ts.date() if pd.notna(ts) else None
+    return out
+
+
 def ler_membros() -> list[tuple]:
     df = _ler_aba(SHEET_MEMBROS)
     if df.empty:
@@ -129,8 +155,7 @@ def salvar_membros(membros: list[tuple]) -> None:
     rows = []
     for m in membros:
         rows.append(dict(zip(COL_MEMBROS, m)))
-    df = pd.DataFrame(rows, columns=COL_MEMBROS)
-    _salvar_aba(SHEET_MEMBROS, df, COL_MEMBROS)
+    salvar_membros_df(pd.DataFrame(rows, columns=COL_MEMBROS))
 
 
 def ler_inconsistencias() -> list[tuple]:
@@ -144,7 +169,15 @@ def salvar_inconsistencias(items: list[tuple]) -> None:
     df = pd.DataFrame(
         [dict(zip(COL_INCONSISTENCIAS, t)) for t in items], columns=COL_INCONSISTENCIAS
     )
-    _salvar_aba(SHEET_INCONSISTENCIAS, df, COL_INCONSISTENCIAS)
+    salvar_inconsistencias_df(df)
+
+
+def ler_inconsistencias_df() -> pd.DataFrame:
+    return _ler_generico(SHEET_INCONSISTENCIAS, COL_INCONSISTENCIAS)
+
+
+def salvar_inconsistencias_df(df: pd.DataFrame) -> None:
+    _salvar_generico(SHEET_INCONSISTENCIAS, df, COL_INCONSISTENCIAS)
 
 
 def _ler_generico(sheet: str, cols: list[str]) -> pd.DataFrame:
@@ -215,6 +248,30 @@ def salvar_config(cfg: dict[str, str]) -> None:
         [{"chave": k, "valor": v} for k, v in cfg.items()], columns=COL_CONFIG
     )
     _salvar_aba(SHEET_CONFIG, df, COL_CONFIG)
+
+
+def ler_config_df() -> pd.DataFrame:
+    df = _ler_generico(SHEET_CONFIG, COL_CONFIG)
+    if df.empty:
+        from dados_membros import CONFIG_PADRAO
+
+        return pd.DataFrame(
+            [{"chave": k, "valor": str(v)} for k, v in CONFIG_PADRAO.items()],
+            columns=COL_CONFIG,
+        )
+    return df
+
+
+def salvar_config_df(df: pd.DataFrame) -> None:
+    _salvar_generico(SHEET_CONFIG, df, COL_CONFIG)
+
+
+def ler_memorial() -> pd.DataFrame:
+    return _ler_generico(SHEET_MEMORIAL, COL_MEMORIAL)
+
+
+def salvar_memorial(df: pd.DataFrame) -> None:
+    _salvar_generico(SHEET_MEMORIAL, df, COL_MEMORIAL)
 
 
 def _idade_anos(nasc: date | None) -> int | None:

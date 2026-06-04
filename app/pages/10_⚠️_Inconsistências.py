@@ -1,7 +1,8 @@
-"""Revisão de inconsistências cadastrais."""
+"""CRUD completo — Inconsistências."""
 import sys
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 from utils.auth import require_login
@@ -9,12 +10,14 @@ from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from utils.crud_ui import tabela_crud
 from utils.data_manager import (
     COL_INCONSISTENCIAS,
     inconsistencias_criticas_abertas,
-    ler_inconsistencias,
-    salvar_inconsistencias,
+    ler_inconsistencias_df,
+    salvar_inconsistencias_df,
 )
+from utils.opcoes import PRIORIDADES, RESOLVIDA
 
 st.set_page_config(page_title="Inconsistências", page_icon="⚠️", layout="wide")
 require_login()
@@ -23,32 +26,34 @@ st.title("⚠️ Inconsistências")
 
 crit = inconsistencias_criticas_abertas()
 if crit:
-    st.error(f"{len(crit)} inconsistência(s) crítica(s) em aberto.")
-    for inc in crit:
-        st.write(f"🔴 {inc[2]}")
+    st.error(f"{len(crit)} crítica(s) em aberto.")
 
-items = ler_inconsistencias()
-import pandas as pd
 
-df = pd.DataFrame(items, columns=COL_INCONSISTENCIAS)
-prio = st.multiselect("Prioridade", sorted(df["prioridade"].unique()), default=None)
-if prio:
-    df = df[df["prioridade"].isin(prio)]
-abertas = st.checkbox("Somente em aberto", value=False)
-if abertas:
-    df = df[~df["resolvida"].astype(str).str.lower().isin(("sim", "s"))]
+def _filtro(df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
+    filtrado = False
+    prio = st.session_state.get("inc_f_prio", [])
+    if prio:
+        df = df[df["prioridade"].isin(prio)]
+        filtrado = True
+    if st.session_state.get("inc_f_abertas", False):
+        df = df[~df["resolvida"].astype(str).str.lower().isin(("sim", "s"))]
+        filtrado = True
+    return df, filtrado
 
-edited = st.data_editor(
-    df,
-    use_container_width=True,
+
+st.multiselect("Prioridade", PRIORIDADES, key="inc_f_prio")
+st.checkbox("Somente em aberto", key="inc_f_abertas")
+
+tabela_crud(
+    chave="inconsistencias",
+    colunas=COL_INCONSISTENCIAS,
+    carregar=ler_inconsistencias_df,
+    salvar=salvar_inconsistencias_df,
     column_config={
-        "resolvida": st.column_config.SelectboxColumn(
-            options=["Não", "Em andamento", "Sim"]
-        ),
+        "prioridade": st.column_config.SelectboxColumn(options=PRIORIDADES),
+        "resolvida": st.column_config.SelectboxColumn(options=RESOLVIDA),
     },
+    id_col=None,
+    aplicar_filtro=_filtro,
+    altura=450,
 )
-
-if st.button("💾 Salvar inconsistências"):
-    rows = [tuple(r) for r in edited[COL_INCONSISTENCIAS].to_numpy()]
-    salvar_inconsistencias(rows)
-    st.success("Salvo.")

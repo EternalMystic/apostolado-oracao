@@ -162,6 +162,7 @@ def atalhos_principais() -> None:
     with c2:
         st.page_link("pages/1_📋_Membros.py", label="Membros", use_container_width=True)
         st.page_link("pages/3_🗺️_Rota_de_Visitas.py", label="Rota de visitas", use_container_width=True)
+        st.page_link("pages/14_🏠_Visitas.py", label="Visitas", use_container_width=True)
     with c3:
         st.page_link("pages/6_📦_Entregas.py", label="Entregas", use_container_width=True)
         st.page_link("pages/9_📊_Relatórios.py", label="Relatórios", use_container_width=True)

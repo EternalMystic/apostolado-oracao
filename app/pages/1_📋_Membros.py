@@ -1,6 +1,5 @@
-"""Cadastro e edição de membros."""
+"""CRUD completo — Membros."""
 import sys
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -11,65 +10,54 @@ from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.data_manager import COL_MEMBROS, ler_membros, salvar_membros
+from utils.crud_ui import tabela_crud
+from utils.data_manager import COL_MEMBROS, ler_membros_df, salvar_membros_df
+from utils.opcoes import CONSAGRADA, SEXOS, SITUACOES
 
 st.set_page_config(page_title="Membros", page_icon="📋", layout="wide")
 require_login()
 inject_css()
-st.title("📋 Membros do Apostolado")
+st.title("📋 Membros")
 
-membros = ler_membros()
-df = pd.DataFrame(membros, columns=COL_MEMBROS)
+_cfg = {
+    "id": st.column_config.NumberColumn("ID", min_value=1, step=1),
+    "nasc": st.column_config.DateColumn("Nascimento"),
+    "ingresso": st.column_config.DateColumn("Ingresso"),
+    "sexo": st.column_config.SelectboxColumn("Sexo", options=SEXOS),
+    "situacao": st.column_config.SelectboxColumn("Situação", options=SITUACOES),
+    "consagrada": st.column_config.SelectboxColumn("Consagrada", options=CONSAGRADA),
+}
 
-filtro = st.text_input("Buscar por nome", "")
-if filtro:
-    df = df[df["nome"].str.contains(filtro, case=False, na=False)]
 
-sit = st.multiselect(
+def _filtro(df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
+    filtrado = False
+    nome = st.session_state.get("membros_f_nome", "")
+    if nome:
+        df = df[df["nome"].astype(str).str.contains(nome, case=False, na=False)]
+        filtrado = True
+    sits = st.session_state.get("membros_f_sit", [])
+    if sits:
+        df = df[df["situacao"].isin(sits)]
+        filtrado = True
+    return df, filtrado
+
+
+st.text_input("Buscar nome", key="membros_f_nome")
+base0 = ler_membros_df()
+st.multiselect(
     "Situação",
-    sorted(df["situacao"].dropna().unique()),
-    default=None,
-)
-if sit:
-    df = df[df["situacao"].isin(sit)]
-
-st.caption(f"{len(df)} registro(s) exibido(s)")
-edited = st.data_editor(
-    df,
-    num_rows="dynamic",
-    use_container_width=True,
-    column_config={
-        "nasc": st.column_config.DateColumn("Nascimento"),
-        "ingresso": st.column_config.DateColumn("Ingresso"),
-    },
+    sorted(base0["situacao"].dropna().unique()) if not base0.empty else SITUACOES,
+    key="membros_f_sit",
 )
 
-if st.button("💾 Salvar alterações", type="primary"):
-    rows = []
-    for _, r in edited.iterrows():
-        nasc = r["nasc"]
-        ing = r["ingresso"]
-        if pd.notna(nasc) and not isinstance(nasc, date):
-            nasc = pd.to_datetime(nasc).date() if pd.notna(nasc) else None
-        if pd.notna(ing) and not isinstance(ing, date):
-            ing = pd.to_datetime(ing).date() if pd.notna(ing) else None
-        rows.append(
-            (
-                int(r["id"]) if pd.notna(r["id"]) else 0,
-                str(r["num_orig"]),
-                str(r["nome"]),
-                str(r["sexo"]),
-                nasc if pd.notna(nasc) else None,
-                ing if pd.notna(ing) else None,
-                str(r["endereco"]),
-                str(r["bairro"]),
-                str(r["telefone"]),
-                str(r["funcao"]),
-                str(r["situacao"]),
-                str(r["consagrada"]),
-                str(r["observacoes"]),
-                str(r["pagina"]),
-            )
-        )
-    salvar_membros(rows)
-    st.success("Membros salvos. Backup criado em backups/.")
+tabela_crud(
+    chave="membros",
+    colunas=COL_MEMBROS,
+    carregar=ler_membros_df,
+    salvar=salvar_membros_df,
+    column_config=_cfg,
+    colunas_data=["nasc", "ingresso"],
+    id_col="id",
+    aplicar_filtro=_filtro,
+    altura=500,
+)

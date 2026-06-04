@@ -1,4 +1,4 @@
-"""Configurações do sistema."""
+"""Configurações do sistema — CRUD da tabela Config."""
 import sys
 from pathlib import Path
 
@@ -8,8 +8,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.auth import require_login
 from utils.ui import inject_css
-from utils.data_manager import BACKUPS_DIR, EXCEL_PATH, ler_config, salvar_config
-from utils.dados_membros import CONFIG_PADRAO
+from utils.crud_ui import tabela_crud
+from utils.data_manager import (
+    BACKUPS_DIR,
+    COL_CONFIG,
+    EXCEL_PATH,
+    ler_config_df,
+    salvar_config_df,
+)
 from utils.inicializar_excel import criar_workbook_inicial
 
 st.set_page_config(page_title="Configurações", page_icon="⚙️", layout="wide")
@@ -17,31 +23,15 @@ require_login()
 inject_css()
 st.title("⚙️ Configurações")
 
-cfg = {**CONFIG_PADRAO, **ler_config()}
-
-with st.form("config"):
-    paroquia = st.text_input("Paróquia", cfg.get("paroquia", ""))
-    diocese = st.text_input("Diocese", cfg.get("diocese", ""))
-    cidade = st.text_input("Cidade", cfg.get("cidade", ""))
-    coordenador = st.text_input("Coordenador", cfg.get("coordenador", ""))
-    coordenadora = st.text_input("Coordenadora", cfg.get("coordenadora", ""))
-    whatsapp = st.text_input("WhatsApp coordenador", cfg.get("whatsapp_coordenador", ""))
-    tema = st.color_picker("Cor tema", cfg.get("tema_cor", "#6A1B9A"))
-    backup = st.selectbox("Backup automático", ["Sim", "Não"], index=0)
-    if st.form_submit_button("Salvar configurações"):
-        novo = {
-            **cfg,
-            "paroquia": paroquia,
-            "diocese": diocese,
-            "cidade": cidade,
-            "coordenador": coordenador,
-            "coordenadora": coordenadora,
-            "whatsapp_coordenador": whatsapp,
-            "tema_cor": tema,
-            "backup_automatico": backup,
-        }
-        salvar_config(novo)
-        st.success("Configurações salvas.")
+st.subheader("Parâmetros (chave / valor)")
+tabela_crud(
+    chave="config",
+    colunas=COL_CONFIG,
+    carregar=ler_config_df,
+    salvar=salvar_config_df,
+    id_col=None,
+    altura=350,
+)
 
 st.divider()
 st.warning("Recriar Excel apaga alterações não salvas em backup.")
