@@ -57,13 +57,26 @@ def _header_style(cell):
 
 
 def _df_membros() -> pd.DataFrame:
+    try:
+        from .comunidades_membros import inferir_comunidade
+    except ImportError:
+        from comunidades_membros import inferir_comunidade
+
     rows = []
     for m in MEMBROS_SEED:
         row = dict(zip(COL_MEMBROS[:14], m))
-        row["tipo_membro"] = "Associado"
-        row["comunidade"] = m[7] or ""
+        mid = int(m[0])
+        if mid == 24:
+            row["tipo_membro"] = "Zelador"
+        elif mid in (27, 55):
+            row["tipo_membro"] = "Zelador"
+        else:
+            row["tipo_membro"] = "Associado"
+        row["comunidade"] = inferir_comunidade(mid, m[7] or "", m[9] or "", m[12] or "")
         row["data_inscricao"] = m[5]
-        row["fita_consagracao"] = "Não"
+        row["fita_consagracao"] = (
+            "Sim" if str(m[11]).strip().lower() in ("sim", "s") else "Não"
+        )
         rows.append(row)
     return pd.DataFrame(rows, columns=COL_MEMBROS)
 
