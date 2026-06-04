@@ -37,15 +37,23 @@ st.divider()
 st.subheader("WhatsApp rápido")
 cfg = ler_config()
 msg = st.text_area("Mensagem", "Olá! Lembrete do Apostolado da Oração – Paróquia São Jorge.")
-ativos = [m for m in ler_membros() if m[10] in ("Ativo", "Ativo (presumido)") and str(m[8]).strip()]
-opcoes = {f"{m[2]} ({m[8]})": m for m in ativos if "".join(c for c in str(m[8]) if c.isdigit())}
+ativos = [
+    m
+    for m in ler_membros()
+    if m.get("situacao") in ("Ativo", "Ativo (presumido)") and str(m.get("telefone", "")).strip()
+]
+opcoes = {
+    f"{m['nome']} ({m.get('telefone')})": m
+    for m in ativos
+    if "".join(c for c in str(m.get("telefone", "")) if c.isdigit())
+}
 sel = st.multiselect("Destinatários", list(opcoes.keys()))
 if st.button("Abrir links WhatsApp") and sel:
     for nome in sel:
         m = opcoes[nome]
-        num = "".join(c for c in str(m[8]) if c.isdigit())
+        num = "".join(c for c in str(m.get("telefone", "")) if c.isdigit())
         texto = msg.replace(" ", "%20")
-        st.markdown(f"- [{m[2]}](https://wa.me/55{num}?text={texto})")
+        st.markdown(f"- [{m['nome']}](https://wa.me/55{num}?text={texto})")
 elif cfg.get("whatsapp_coordenador"):
     n = "".join(c for c in cfg["whatsapp_coordenador"] if c.isdigit())
     if n:

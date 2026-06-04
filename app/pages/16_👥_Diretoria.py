@@ -40,7 +40,11 @@ with tab1:
 
 with tab2:
     st.caption("Zeladores(as) — vínculo com membros do cadastro.")
-    membros = {m[0]: m[2] for m in ler_membros() if m[10] in ("Ativo", "Ativo (presumido)")}
+    membros = {
+        m["id"]: m["nome"]
+        for m in ler_membros()
+        if m.get("situacao") in ("Ativo", "Ativo (presumido)")
+    }
     tabela_crud(
         chave="zeladores",
         colunas=COL_ZELADORES,

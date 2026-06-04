@@ -10,16 +10,21 @@ from utils.ui import inject_css
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.data_manager import ler_membros
+from utils.endereco import endereco_completo_de_registro, texto_busca_endereco
 
-st.set_page_config(page_title="Consulta Rápida", page_icon="🔍", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(
+    page_title="Consulta Rápida",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="auto",
+)
 require_login()
 inject_css()
 st.title("🔍 Consulta Rápida")
 
 q = st.text_input(
     "Buscar membro",
-    placeholder="Nome, telefone ou bairro",
-    label_visibility="visible",
+    placeholder="Nome, telefone, CEP, rua, bairro ou cidade",
 )
 if not q:
     st.info("Digite acima para buscar.")
@@ -29,26 +34,43 @@ q_lower = q.lower()
 resultados = []
 for m in ler_membros():
     texto = " ".join(
-        str(x) for x in [m[1], m[2], m[6], m[7], m[8], m[10], m[12]] if x
+        str(x)
+        for x in [
+            m.get("num_orig"),
+            m.get("nome"),
+            m.get("telefone"),
+            m.get("situacao"),
+            m.get("observacoes"),
+            texto_busca_endereco(m),
+        ]
+        if x
     ).lower()
     if q_lower in texto:
         resultados.append(m)
 
 st.write(f"**{len(resultados)}** resultado(s)")
 for m in resultados:
-    with st.expander(f"{m[1]} – {m[2]} ({m[10]})"):
+    with st.expander(f"{m.get('num_orig')} – {m.get('nome')} ({m.get('situacao')})"):
         c1, c2 = st.columns(2)
         with c1:
-            st.write(f"**Sexo:** {m[3]}")
-            st.write(f"**Nasc.:** {m[4].strftime('%d/%m/%Y') if m[4] else '—'}")
-            st.write(f"**Ingresso:** {m[5].strftime('%d/%m/%Y') if m[5] else '—'}")
-            st.write(f"**Consagrada:** {m[11]}")
+            st.write(f"**Sexo:** {m.get('sexo') or '—'}")
+            nasc = m.get("nasc")
+            st.write(f"**Nasc.:** {nasc.strftime('%d/%m/%Y') if nasc else '—'}")
+            ing = m.get("ingresso")
+            st.write(f"**Ingresso AO:** {ing.strftime('%d/%m/%Y') if ing else '—'}")
+            st.write(f"**Consagrada:** {m.get('consagrada') or '—'}")
+            st.write(f"**Comunidade:** {m.get('comunidade') or '—'}")
         with c2:
-            st.write(f"**Endereço:** {m[6] or '—'}")
-            st.write(f"**Bairro:** {m[7] or '—'}")
-            st.write(f"**Telefone:** {m[8] or '—'}")
-            st.write(f"**Função:** {m[9] or '—'}")
-        st.write(f"**Obs.:** {m[12]}")
-        tel = str(m[8]).replace("(", "").replace(")", "").replace(" ", "").replace("-", "")
+            st.write(f"**CEP:** {m.get('cep') or '—'}")
+            st.write(f"**Rua:** {m.get('rua') or '—'}")
+            st.write(f"**Número:** {m.get('numero') or '—'}")
+            st.write(f"**Bairro:** {m.get('bairro') or '—'}")
+            st.write(f"**Cidade:** {m.get('cidade') or '—'}")
+            st.write(f"**Telefone:** {m.get('telefone') or '—'}")
+            st.write(f"**Função:** {m.get('funcao') or '—'}")
+        st.write(f"**Endereço completo:** {endereco_completo_de_registro(m) or '—'}")
+        if m.get("observacoes"):
+            st.write(f"**Observações:** {m.get('observacoes')}")
+        tel = str(m.get("telefone", "")).replace("(", "").replace(")", "").replace(" ", "").replace("-", "")
         if tel and tel[0].isdigit():
             st.link_button("WhatsApp", f"https://wa.me/55{tel}")

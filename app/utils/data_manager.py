@@ -32,20 +32,24 @@ SHEET_CONFIG = "Config"
 SHEET_MEMORIAL = "Memorial"
 
 COL_MEMBROS = [
-    "id", "num_orig", "nome", "sexo", "nasc", "ingresso", "endereco", "bairro",
+    "id", "num_orig", "nome", "sexo", "nasc", "ingresso",
+    "rua", "numero", "bairro", "cep", "cidade",
     "telefone", "funcao", "situacao", "consagrada", "observacoes", "pagina",
     "tipo_membro", "comunidade", "data_inscricao", "fita_consagracao",
 ]
+COL_ENDERECO = ["cep", "rua", "numero", "bairro", "cidade"]
 COL_INCONSISTENCIAS = [
     "categoria", "prioridade", "descricao", "acao_sugerida", "resolvida",
 ]
 COL_ENTREGAS = [
-    "id", "membro_id", "membro_nome", "item", "data_entrega", "entregue",
-    "observacoes",
+    "id", "membro_id", "membro_nome",
+    *COL_ENDERECO,
+    "item", "data_entrega", "entregue", "observacoes",
 ]
 COL_VISITAS = [
-    "id", "membro_id", "membro_nome", "data_visita", "bairro", "item",
-    "realizada", "tipo_visita", "nota_pastoral", "observacoes",
+    "id", "membro_id", "membro_nome", "data_visita",
+    *COL_ENDERECO,
+    "item", "realizada", "tipo_visita", "nota_pastoral", "observacoes",
 ]
 COL_CONSAGRACOES = [
     "id", "membro_id", "membro_nome", "data_consagracao", "local", "observacoes",
@@ -58,6 +62,101 @@ COL_AGENDA = [
 ]
 COL_CONFIG = ["chave", "valor"]
 COL_MEMORIAL = ["nome", "nasc", "falecimento", "observacao"]
+
+
+def _migrar_membros_endereco(df: pd.DataFrame) -> pd.DataFrame:
+    try:
+        from .endereco import separar_endereco_legacy
+    except ImportError:
+        from endereco import separar_endereco_legacy
+
+    out = df.copy()
+    if "endereco" in out.columns and "rua" not in out.columns:
+        out["rua"] = out["endereco"]
+        mudou = True
+    else:
+        mudou = False
+    for c in COL_MEMBROS:
+        if c not in out.columns:
+            out[c] = ""
+            mudou = True
+    for i in out.index:
+        if not str(out.at[i, "rua"]).strip() and "endereco" in df.columns:
+            leg = str(df.at[i, "endereco"] if i in df.index else "")
+            if leg:
+                out.at[i, "rua"] = leg
+        if not str(out.at[i, "numero"]).strip() or not str(out.at[i, "cidade"]).strip():
+            sep = separar_endereco_legacy(
+                str(out.at[i, "rua"]),
+                str(out.at[i, "bairro"]),
+                str(out.at[i, "cidade"]) if str(out.at[i, "cidade"]).strip() else "",
+            )
+            if not str(out.at[i, "numero"]).strip() and sep["numero"]:
+                out.at[i, "numero"] = sep["numero"]
+                out.at[i, "rua"] = sep["rua"]
+                mudou = True
+            if not str(out.at[i, "cidade"]).strip():
+                out.at[i, "cidade"] = sep["cidade"]
+                mudou = True
+    if "endereco" in out.columns:
+        out = out.drop(columns=["endereco"])
+        mudou = True
+    return out.reindex(columns=COL_MEMBROS), mudou
+
+
+def _mapa_membros_por_id() -> dict[int, dict[str, str]]:
+    try:
+        from .endereco import linha_entrega_visita_de_membro
+    except ImportError:
+        from endereco import linha_entrega_visita_de_membro
+
+    df = ler_membros_df()
+    mp: dict[int, dict[str, str]] = {}
+    for _, r in df.iterrows():
+        mid = int(pd.to_numeric(r.get("id"), errors="coerce") or 0)
+        if mid:
+            mp[mid] = linha_entrega_visita_de_membro(r.to_dict())
+    return mp
+
+
+def _migrar_planilha_endereco(
+    df: pd.DataFrame, cols: list[str], mapa: dict[int, dict[str, str]]
+) -> tuple[pd.DataFrame, bool]:
+    out = df.copy()
+    mudou = False
+    for c in cols:
+        if c not in out.columns:
+            out[c] = ""
+            mudou = True
+    for i in out.index:
+        mid_raw = pd.to_numeric(out.at[i, "membro_id"], errors="coerce")
+        mid = int(mid_raw) if pd.notna(mid_raw) else 0
+        mem = mapa.get(mid, {})
+        for k in COL_ENDERECO:
+            if mem.get(k) and not str(out.at[i, k]).strip():
+                out.at[i, k] = mem[k]
+                mudou = True
+        obs = str(out.at[i, "observacoes"]).strip()
+        bairro_mem = mem.get("bairro", "")
+        if obs and bairro_mem and obs == bairro_mem and not str(out.at[i, "bairro"]).strip():
+            out.at[i, "bairro"] = obs
+            out.at[i, "observacoes"] = ""
+            mudou = True
+        elif obs and not any(str(out.at[i, k]).strip() for k in COL_ENDERECO):
+            if bairro_mem and obs == bairro_mem:
+                out.at[i, "bairro"] = obs
+                out.at[i, "observacoes"] = ""
+                mudou = True
+    if "bairro" in out.columns and "rua" in cols and "rua" not in COL_ENDERECO:
+        pass
+    # Visitas antigas: só coluna "bairro" no meio da planilha
+    if "bairro" in df.columns and "rua" not in df.columns:
+        for i in out.index:
+            b = str(df.at[i, "bairro"]).strip()
+            if b and not str(out.at[i, "bairro"]).strip():
+                out.at[i, "bairro"] = b
+                mudou = True
+    return out.reindex(columns=cols), mudou
 
 
 def _migrar_excel() -> None:
@@ -102,12 +201,25 @@ def _migrar_excel() -> None:
             mudou = True
 
     if SHEET_MEMBROS in todas:
-        df = todas[SHEET_MEMBROS]
-        for c in COL_MEMBROS:
-            if c not in df.columns:
-                df[c] = ""
-                mudou = True
-        todas[SHEET_MEMBROS] = df.reindex(columns=COL_MEMBROS)
+        df, m2 = _migrar_membros_endereco(todas[SHEET_MEMBROS])
+        todas[SHEET_MEMBROS] = df
+        mudou = mudou or m2
+
+    mapa = {}
+    if SHEET_MEMBROS in todas:
+        try:
+            from .endereco import linha_entrega_visita_de_membro
+        except ImportError:
+            from endereco import linha_entrega_visita_de_membro
+        for _, r in todas[SHEET_MEMBROS].iterrows():
+            mid = int(pd.to_numeric(r.get("id"), errors="coerce") or 0)
+            if mid:
+                mapa[mid] = linha_entrega_visita_de_membro(r.to_dict())
+
+    if SHEET_ENTREGAS in todas:
+        df, m2 = _migrar_planilha_endereco(todas[SHEET_ENTREGAS], COL_ENTREGAS, mapa)
+        todas[SHEET_ENTREGAS] = df
+        mudou = mudou or m2
 
     if SHEET_INTENCOES in todas:
         df = todas[SHEET_INTENCOES].copy()
@@ -124,12 +236,9 @@ def _migrar_excel() -> None:
         todas[SHEET_INTENCOES] = df.reindex(columns=COL_INTENCOES)
 
     if SHEET_VISITAS in todas:
-        df = todas[SHEET_VISITAS]
-        for c in COL_VISITAS:
-            if c not in df.columns:
-                df[c] = ""
-                mudou = True
-        todas[SHEET_VISITAS] = df.reindex(columns=COL_VISITAS)
+        df, m2 = _migrar_planilha_endereco(todas[SHEET_VISITAS], COL_VISITAS, mapa)
+        todas[SHEET_VISITAS] = df
+        mudou = mudou or m2
 
     if mudou:
         _backup_antes_de_escrever()
@@ -189,27 +298,19 @@ def _salvar_aba(sheet: str, df: pd.DataFrame, cols: list[str]) -> None:
             sdf.to_excel(writer, sheet_name=nome, index=False)
 
 
-def _membro_tuple(row: pd.Series) -> tuple:
-    return (
-        int(row.get("id", 0) or 0),
-        str(row.get("num_orig", "") or ""),
-        str(row.get("nome", "") or ""),
-        str(row.get("sexo", "") or ""),
-        _as_date(row.get("nasc")),
-        _as_date(row.get("ingresso")),
-        str(row.get("endereco", "") or ""),
-        str(row.get("bairro", "") or ""),
-        str(row.get("telefone", "") or ""),
-        str(row.get("funcao", "") or ""),
-        str(row.get("situacao", "") or ""),
-        str(row.get("consagrada", "") or ""),
-        str(row.get("observacoes", "") or ""),
-        str(row.get("pagina", "") or ""),
-        str(row.get("tipo_membro", "") or "Associado"),
-        str(row.get("comunidade", "") or ""),
-        _as_date(row.get("data_inscricao")),
-        str(row.get("fita_consagracao", "") or "Não"),
-    )
+def _membro_dict(row: pd.Series) -> dict[str, Any]:
+    try:
+        from .endereco import endereco_completo_de_registro
+    except ImportError:
+        from endereco import endereco_completo_de_registro
+
+    d = {c: row.get(c, "") for c in COL_MEMBROS}
+    d["id"] = int(row.get("id", 0) or 0)
+    d["nasc"] = _as_date(row.get("nasc"))
+    d["ingresso"] = _as_date(row.get("ingresso"))
+    d["data_inscricao"] = _as_date(row.get("data_inscricao"))
+    d["endereco_completo"] = endereco_completo_de_registro(d)
+    return d
 
 
 def ler_membros_df() -> pd.DataFrame:
@@ -235,25 +336,51 @@ def _normalizar_datas_df(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
     return out
 
 
-def ler_membros() -> list[tuple]:
-    df = _ler_aba(SHEET_MEMBROS)
+def ler_membros() -> list[dict[str, Any]]:
+    df = ler_membros_df()
     if df.empty:
         return []
-    return [_membro_tuple(r) for _, r in df.iterrows()]
+    return [_membro_dict(r) for _, r in df.iterrows()]
 
 
-def salvar_membros(membros: list[tuple]) -> None:
+def salvar_membros(membros: list[dict[str, Any]] | list[tuple]) -> None:
     rows = []
     for m in membros:
-        if len(m) >= len(COL_MEMBROS):
+        if isinstance(m, dict):
+            rows.append({c: m.get(c, "") for c in COL_MEMBROS})
+        elif len(m) >= len(COL_MEMBROS):
             rows.append(dict(zip(COL_MEMBROS, m[: len(COL_MEMBROS)])))
         else:
-            row = dict(zip(COL_MEMBROS[:14], m[:14]))
-            row["tipo_membro"] = "Associado"
-            row["comunidade"] = row.get("bairro", "") or ""
-            row["data_inscricao"] = row.get("ingresso")
-            row["fita_consagracao"] = "Não"
-            rows.append(row)
+            try:
+                from .endereco import separar_endereco_legacy
+            except ImportError:
+                from endereco import separar_endereco_legacy
+            addr = separar_endereco_legacy(str(m[6]), str(m[7]))
+            rows.append(
+                {
+                    "id": m[0],
+                    "num_orig": m[1],
+                    "nome": m[2],
+                    "sexo": m[3],
+                    "nasc": m[4],
+                    "ingresso": m[5],
+                    "rua": addr["rua"],
+                    "numero": addr["numero"],
+                    "bairro": addr["bairro"],
+                    "cep": addr["cep"],
+                    "cidade": addr["cidade"],
+                    "telefone": m[8],
+                    "funcao": m[9],
+                    "situacao": m[10],
+                    "consagrada": m[11],
+                    "observacoes": m[12],
+                    "pagina": m[13],
+                    "tipo_membro": "Associado",
+                    "comunidade": "",
+                    "data_inscricao": m[5],
+                    "fita_consagracao": "Não",
+                }
+            )
     salvar_membros_df(pd.DataFrame(rows, columns=COL_MEMBROS))
 
 
@@ -353,6 +480,8 @@ def preparar_entregas_editor(df: pd.DataFrame) -> pd.DataFrame:
     out["id"] = pd.to_numeric(out["id"], errors="coerce").fillna(0).astype(int)
     out["membro_id"] = pd.to_numeric(out["membro_id"], errors="coerce").fillna(0).astype(int)
     out["membro_nome"] = out["membro_nome"].fillna("").astype(str)
+    for c in COL_ENDERECO:
+        out[c] = out[c].fillna("").astype(str)
     out["data_entrega"] = pd.to_datetime(out["data_entrega"], errors="coerce")
     out["item"] = out["item"].fillna("").astype(str).str.strip()
     invalid_item = ~out["item"].isin(ITENS_ENTREGA) | (out["item"] == "")
@@ -616,8 +745,8 @@ def aniversariantes_proximos(dias: int = 30) -> list[dict[str, Any]]:
     limite = hoje + timedelta(days=dias)
     resultado = []
     for m in ler_membros():
-        nasc = _as_date(m[4])
-        sit = m[10]
+        nasc = _as_date(m.get("nasc"))
+        sit = m.get("situacao", "")
         if not nasc or sit == "Falecida":
             continue
         try:
@@ -629,11 +758,11 @@ def aniversariantes_proximos(dias: int = 30) -> list[dict[str, Any]]:
         if hoje <= prox <= limite:
             resultado.append(
                 {
-                    "id": m[0],
-                    "num_orig": m[1],
-                    "nome": m[2],
+                    "id": m["id"],
+                    "num_orig": m.get("num_orig", ""),
+                    "nome": m.get("nome", ""),
                     "nasc": nasc,
-                    "telefone": m[8],
+                    "telefone": m.get("telefone", ""),
                     "situacao": sit,
                     "proximo": prox,
                     "dias": (prox - hoje).days,
@@ -658,10 +787,14 @@ def inconsistencias_criticas_abertas() -> list[tuple]:
 def total_por_situacao() -> dict[str, int]:
     totais: dict[str, int] = {}
     for m in ler_membros():
-        sit = m[10] or "Sem situação"
+        sit = m.get("situacao") or "Sem situação"
         totais[sit] = totais.get(sit, 0) + 1
     return totais
 
 
-def membros_sem_telefone() -> list[tuple]:
-    return [m for m in ler_membros() if not str(m[8]).strip()]
+def membros_sem_telefone() -> list[dict[str, Any]]:
+    return [m for m in ler_membros() if not str(m.get("telefone", "")).strip()]
+
+
+def membros_sem_endereco() -> list[dict[str, Any]]:
+    return [m for m in ler_membros() if not str(m.get("rua", "")).strip()]

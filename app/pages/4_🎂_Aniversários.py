@@ -38,6 +38,9 @@ else:
 
 st.divider()
 st.subheader("Todos com data de nascimento (exceto falecidos)")
-for m in sorted(ler_membros(), key=lambda x: ((x[4].month, x[4].day) if x[4] else (13, 32))):
-    if m[4] and m[10] != "Falecida":
-        st.write(f"{m[4].strftime('%d/%m')} – **{m[2]}** ({m[10]})")
+for m in sorted(
+    ler_membros(),
+    key=lambda x: ((x["nasc"].month, x["nasc"].day) if x.get("nasc") else (13, 32)),
+):
+    if m.get("nasc") and m.get("situacao") != "Falecida":
+        st.write(f"{m['nasc'].strftime('%d/%m')} – **{m['nome']}** ({m.get('situacao')})")

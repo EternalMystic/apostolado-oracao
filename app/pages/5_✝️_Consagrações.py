@@ -9,6 +9,7 @@ from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from utils.colunas_ui import montar_column_config
 from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_CONSAGRACOES, ler_consagracoes, ler_membros, salvar_consagracoes
 
@@ -17,7 +18,7 @@ require_login()
 inject_css()
 st.title("✝️ Consagrações")
 
-cons = [m for m in ler_membros() if str(m[11]).lower() == "sim"]
+cons = [m for m in ler_membros() if str(m.get("consagrada", "")).lower() == "sim"]
 st.metric("Consagrados (coluna do membro)", len(cons))
 
 tabela_crud(
@@ -25,9 +26,10 @@ tabela_crud(
     colunas=COL_CONSAGRACOES,
     carregar=ler_consagracoes,
     salvar=salvar_consagracoes,
-    column_config={
-        "data_consagracao": st.column_config.DateColumn("Data consagração"),
-    },
+    column_config=montar_column_config(
+        COL_CONSAGRACOES,
+        {"data_consagracao": st.column_config.DateColumn("Data da consagração")},
+    ),
     colunas_data=["data_consagracao"],
     id_col="id",
     altura=400,

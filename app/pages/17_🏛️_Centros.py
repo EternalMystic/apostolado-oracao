@@ -44,8 +44,20 @@ if com != "Todas" and not df.empty and "comunidade" in df.columns:
     df = df[df["comunidade"].astype(str).str.contains(com, case=False, na=False)]
 st.metric("Membros", len(df))
 if not df.empty:
-    st.dataframe(
-        df[["id", "nome", "bairro", "telefone", "tipo_membro", "situacao"]].head(40),
-        use_container_width=True,
-        hide_index=True,
+    cols = ["id", "nome", "rua", "numero", "bairro", "cep", "cidade", "telefone", "tipo_membro", "situacao"]
+    vis = df[[c for c in cols if c in df.columns]].head(40).copy()
+    vis = vis.rename(
+        columns={
+            "id": "ID",
+            "nome": "Nome",
+            "rua": "Rua",
+            "numero": "Número",
+            "bairro": "Bairro",
+            "cep": "CEP",
+            "cidade": "Cidade",
+            "telefone": "Telefone",
+            "tipo_membro": "Tipo",
+            "situacao": "Situação",
+        }
     )
+    st.dataframe(vis, use_container_width=True, hide_index=True)

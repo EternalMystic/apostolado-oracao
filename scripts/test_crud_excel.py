@@ -53,8 +53,11 @@ def test_membros() -> None:
                 "sexo": "F",
                 "nasc": None,
                 "ingresso": None,
-                "endereco": "",
-                "bairro": "",
+                "rua": "Rua Teste",
+                "numero": "1",
+                "bairro": "Centro",
+                "cep": "",
+                "cidade": "Nova Odessa",
                 "telefone": "",
                 "funcao": "",
                 "situacao": "Ativo",
@@ -102,6 +105,9 @@ def test_tabela_id(ler, salvar, cols, id_val: int) -> None:
         row["membro_nome"] = MARCADOR
     if "item" in cols:
         row["item"] = "Nenhum – visita de acompanhamento pastoral"
+    for k in ("cep", "rua", "numero", "bairro", "cidade"):
+        if k in cols and not row.get(k):
+            row[k] = "Centro" if k == "bairro" else ("Rua X" if k == "rua" else "Nova Odessa" if k == "cidade" else "1")
     if "entregue" in cols:
         row["entregue"] = "N"
     if "realizada" in cols:

@@ -59,12 +59,33 @@ def _header_style(cell):
 def _df_membros() -> pd.DataFrame:
     try:
         from .comunidades_membros import inferir_comunidade
+        from .endereco import separar_endereco_legacy
     except ImportError:
         from comunidades_membros import inferir_comunidade
+        from endereco import separar_endereco_legacy
 
     rows = []
     for m in MEMBROS_SEED:
-        row = dict(zip(COL_MEMBROS[:14], m))
+        addr = separar_endereco_legacy(str(m[6]), str(m[7]))
+        row = {
+            "id": m[0],
+            "num_orig": m[1],
+            "nome": m[2],
+            "sexo": m[3],
+            "nasc": m[4],
+            "ingresso": m[5],
+            "rua": addr["rua"],
+            "numero": addr["numero"],
+            "bairro": addr["bairro"],
+            "cep": addr["cep"],
+            "cidade": addr["cidade"],
+            "telefone": m[8],
+            "funcao": m[9],
+            "situacao": m[10],
+            "consagrada": m[11],
+            "observacoes": m[12],
+            "pagina": m[13],
+        }
         mid = int(m[0])
         if mid == 24:
             row["tipo_membro"] = "Zelador"
@@ -72,7 +93,9 @@ def _df_membros() -> pd.DataFrame:
             row["tipo_membro"] = "Zelador"
         else:
             row["tipo_membro"] = "Associado"
-        row["comunidade"] = inferir_comunidade(mid, m[7] or "", m[9] or "", m[12] or "")
+        row["comunidade"] = inferir_comunidade(
+            mid, addr["bairro"], m[9] or "", m[12] or ""
+        )
         row["data_inscricao"] = m[5]
         row["fita_consagracao"] = (
             "Sim" if str(m[11]).strip().lower() in ("sim", "s") else "Não"
@@ -134,20 +157,30 @@ def _df_consagracoes() -> pd.DataFrame:
 
 
 def _df_rota_entregas() -> pd.DataFrame:
-    """Linhas iniciais da rota para membros ativos com endereço."""
+    """Linhas iniciais da rota para membros ativos com endereço completo."""
+    try:
+        from .endereco import linha_entrega_visita_de_membro, separar_endereco_legacy
+    except ImportError:
+        from endereco import linha_entrega_visita_de_membro, separar_endereco_legacy
+
     rows = []
     eid = 1
     ativos = [m for m in MEMBROS_SEED if m[10] in ("Ativo", "Ativo (presumido)")]
     for m in sorted(ativos, key=lambda x: (x[7] or "", x[2])):
+        addr = separar_endereco_legacy(str(m[6]), str(m[7]))
+        reg = {"rua": addr["rua"], "numero": addr["numero"], "bairro": addr["bairro"],
+               "cep": addr["cep"], "cidade": addr["cidade"]}
+        end = linha_entrega_visita_de_membro(reg)
         rows.append(
             {
                 "id": eid,
                 "membro_id": m[0],
                 "membro_nome": m[2],
+                **end,
                 "item": ITENS_ENTREGA[0],
                 "data_entrega": "",
                 "entregue": "N",
-                "observacoes": m[7] or "",
+                "observacoes": "",
             }
         )
         eid += 1

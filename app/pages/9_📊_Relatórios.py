@@ -22,9 +22,11 @@ from utils.data_manager import (
     ler_intencoes_papa,
     ler_membros,
     ler_membros_df,
+    membros_sem_endereco,
     membros_sem_telefone,
     total_por_situacao,
 )
+from utils.endereco import endereco_completo_de_registro
 
 st.set_page_config(page_title="Relatórios", page_icon="📊", layout="wide", initial_sidebar_state="auto")
 require_login()
@@ -77,8 +79,8 @@ if st.checkbox("Mostrar diretoria"):
 if st.checkbox("Mostrar intenções do Papa"):
     st.dataframe(ler_intencoes_papa(), use_container_width=True, hide_index=True)
 
-sem_end = [m for m in ler_membros() if not str(m[6]).strip()]
+sem_end = membros_sem_endereco()
 if sem_end:
-    with st.expander(f"Membros sem endereço ({len(sem_end)})"):
+    with st.expander(f"Membros sem rua cadastrada ({len(sem_end)})"):
         for m in sem_end:
-            st.write(f"• {m[2]} — {m[10]}")
+            st.write(f"• {m.get('nome')} — {m.get('situacao')}")

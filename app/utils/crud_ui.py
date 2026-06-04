@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from utils.colunas_ui import montar_column_config
 from utils.data_manager import preparar_dataframe
 
 RID = "_rid"
@@ -154,7 +155,7 @@ def tabela_crud(
         exibir, filtrado = aplicar_filtro(base)
 
     cols_editor = colunas.copy()
-    cfg = dict(column_config)
+    cfg = montar_column_config(colunas, column_config)
     if usa_rid:
         exibir = garantir_rid(exibir)
         cols_editor = [RID] + colunas

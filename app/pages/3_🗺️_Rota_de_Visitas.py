@@ -1,5 +1,4 @@
-"""Rota de visitas — edição com merge seguro ao filtrar."""
-import re
+"""Rota de visitas — endereço completo e filtros por CEP, bairro, rua e cidade."""
 import sys
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from utils.colunas_ui import montar_column_config
 from utils.crud_ui import mesclar_por_id
 from utils.data_manager import (
     COL_ENTREGAS,
@@ -21,9 +21,15 @@ from utils.data_manager import (
     salvar_entregas,
 )
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
+from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro
 from utils.opcoes import ENTREGUE
 
-st.set_page_config(page_title="Rota de Visitas", page_icon="🗺️", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(
+    page_title="Rota de Visitas",
+    page_icon="🗺️",
+    layout="wide",
+    initial_sidebar_state="auto",
+)
 require_login()
 inject_css()
 st.title("🗺️ Rota de Visitas")
@@ -37,74 +43,100 @@ def ordem_bairro(b: str) -> int:
     return len(ORDEM_BAIRROS)
 
 
-def extrair_numero(end: str) -> int:
-    m = re.search(r"\b(\d+)\b", end or "")
-    return int(m.group(1)) if m else 99999
+def _chave_ordenacao(m: dict) -> tuple:
+    return (
+        ordem_bairro(str(m.get("bairro", ""))),
+        str(m.get("cep", "")),
+        str(m.get("rua", "")),
+        str(m.get("numero", "")),
+        str(m.get("nome", "")),
+    )
 
 
-membros = {m[0]: m for m in ler_membros() if m[10] in ("Ativo", "Ativo (presumido)")}
+def _linha_rota(m: dict, eid: int) -> dict:
+    end = linha_entrega_visita_de_membro(m)
+    return {
+        "id": eid,
+        "membro_id": m["id"],
+        "membro_nome": m["nome"],
+        **end,
+        "item": ITENS_ENTREGA[0],
+        "data_entrega": pd.NaT,
+        "entregue": "N",
+        "observacoes": "",
+    }
+
+
+membros_ativos = [
+    m
+    for m in ler_membros()
+    if m.get("situacao") in ("Ativo", "Ativo (presumido)")
+]
+membros = {m["id"]: m for m in membros_ativos}
 df_full = ler_entregas()
 
 if df_full.empty and membros:
-    rows = []
-    for i, m in enumerate(
-        sorted(membros.values(), key=lambda x: (ordem_bairro(x[7]), extrair_numero(x[6]), x[2])),
-        start=1,
-    ):
-        rows.append(
-            {
-                "id": i,
-                "membro_id": m[0],
-                "membro_nome": m[2],
-                "item": ITENS_ENTREGA[0],
-                "data_entrega": pd.NaT,
-                "entregue": "N",
-                "observacoes": m[7] or "",
-            }
-        )
+    rows = [_linha_rota(m, i) for i, m in enumerate(sorted(membros.values(), key=_chave_ordenacao), 1)]
     df_full = preparar_entregas_editor(pd.DataFrame(rows))
     salvar_entregas(df_full)
 
 if st.button("🔄 Gerar rota a partir dos membros ativos"):
-    rows = []
-    for i, m in enumerate(
-        sorted(membros.values(), key=lambda x: (ordem_bairro(x[7]), extrair_numero(x[6]), x[2])),
-        start=1,
-    ):
-        rows.append(
-            {
-                "id": i,
-                "membro_id": m[0],
-                "membro_nome": m[2],
-                "item": ITENS_ENTREGA[0],
-                "data_entrega": pd.NaT,
-                "entregue": "N",
-                "observacoes": m[7] or "",
-            }
-        )
+    rows = [_linha_rota(m, i) for i, m in enumerate(sorted(membros.values(), key=_chave_ordenacao), 1)]
     salvar_entregas(preparar_entregas_editor(pd.DataFrame(rows)))
     st.rerun()
 
-bairro_f = st.selectbox(
-    "Filtrar bairro",
-    ["Todos"] + sorted({m[7] for m in membros.values() if m[7]}),
+st.subheader("Filtrar endereço")
+f1, f2, f3, f4 = st.columns(4)
+with f1:
+    filtro_cep = st.text_input("CEP", key="rota_f_cep", placeholder="Ex.: 13380")
+with f2:
+    bairros = sorted({str(m.get("bairro", "")).strip() for m in membros_ativos if m.get("bairro")})
+    filtro_bairro = st.selectbox("Bairro", ["Todos"] + bairros, key="rota_f_bairro")
+with f3:
+    filtro_rua = st.text_input("Rua", key="rota_f_rua", placeholder="Parte do nome da rua")
+with f4:
+    cidades = sorted({str(m.get("cidade", "")).strip() for m in membros_ativos if m.get("cidade")})
+    filtro_cidade = st.selectbox("Cidade", ["Todos"] + cidades, key="rota_f_cidade")
+
+filtrado = any(
+    [
+        filtro_cep.strip(),
+        filtro_bairro != "Todos",
+        filtro_rua.strip(),
+        filtro_cidade != "Todos",
+    ]
 )
-filtrado = bairro_f != "Todos"
+
 df = preparar_entregas_editor(df_full.copy())
 if filtrado:
-    df = df[
-        df.apply(
-            lambda r: membros.get(int(r["membro_id"]), (None,) * 14)[7] == bairro_f
-            if pd.notna(r.get("membro_id"))
-            else False,
-            axis=1,
+
+    def _linha_passa(r: pd.Series) -> bool:
+        mid = int(r["membro_id"]) if pd.notna(r.get("membro_id")) else 0
+        m = membros.get(mid)
+        if not m:
+            reg = {
+                "cep": r.get("cep", ""),
+                "rua": r.get("rua", ""),
+                "numero": r.get("numero", ""),
+                "bairro": r.get("bairro", ""),
+                "cidade": r.get("cidade", ""),
+            }
+        else:
+            reg = m
+        return aplicar_filtro_endereco(
+            reg,
+            cep=filtro_cep,
+            bairro=filtro_bairro,
+            rua=filtro_rua,
+            cidade=filtro_cidade,
         )
-    ]
+
+    df = df[df.apply(_linha_passa, axis=1)]
     st.warning("Filtro ativo: ao salvar, só altera linhas visíveis.")
 
 st.caption(
-    "Edite abaixo ou use **Entregas** para CRUD completo. "
-    "➕/excluir linhas no editor; depois **Salvar rota**."
+    "Colunas de endereço: CEP, rua, número, bairro e cidade. "
+    "Campo **Observações** é só para notas da visita (não use para endereço)."
 )
 
 if df.empty:
@@ -115,13 +147,16 @@ else:
         df,
         num_rows="dynamic",
         use_container_width=True,
-        column_config={
-            "id": st.column_config.NumberColumn("ID", format="%d"),
-            "membro_id": st.column_config.NumberColumn("Membro", format="%d"),
-            "item": st.column_config.SelectboxColumn("Item", options=ITENS_ENTREGA),
-            "entregue": st.column_config.SelectboxColumn("Entregue?", options=ENTREGUE),
-            "data_entrega": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
-        },
+        column_config=montar_column_config(
+            list(df.columns),
+            {
+                "id": st.column_config.NumberColumn("ID", format="%d"),
+                "membro_id": st.column_config.NumberColumn("ID membro", format="%d"),
+                "item": st.column_config.SelectboxColumn("Material / motivo", options=ITENS_ENTREGA),
+                "entregue": st.column_config.SelectboxColumn("Entregue?", options=ENTREGUE),
+                "data_entrega": st.column_config.DateColumn("Data da entrega", format="DD/MM/YYYY"),
+            },
+        ),
         height=450,
         hide_index=True,
     )
