@@ -24,6 +24,8 @@ ATALHOS_APP = [
     ("pages/8_📅_Agenda.py", "📅", "Agenda"),
     ("pages/18_📢_Comunicações.py", "📢", "Comunicações"),
     ("pages/19_📒_Atas.py", "📒", "Atas"),
+    ("pages/20_💬_Sugestões.py", "💬", "Sugestões"),
+    ("pages/21_🎙️_Reunião_IA.py", "🎙️", "Reunião IA"),
     ("pages/9_📊_Relatórios.py", "📊", "Relatórios"),
 ]
 

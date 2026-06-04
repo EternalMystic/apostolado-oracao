@@ -178,6 +178,8 @@ def criar_workbook_inicial(dest: Path | None = None) -> Path:
         ),
         _ta.SHEET_COMUNICACOES: pd.DataFrame(columns=_ta.COL_COMUNICACOES),
         _ta.SHEET_REUNIOES: pd.DataFrame(columns=_ta.COL_REUNIOES),
+        _ta.SHEET_SUGESTOES: pd.DataFrame(columns=_ta.COL_SUGESTOES),
+        _ta.SHEET_REUNIOES_IA: pd.DataFrame(columns=_ta.COL_REUNIOES_IA),
     }
 
     wb = Workbook()
@@ -196,7 +198,7 @@ def criar_workbook_inicial(dest: Path | None = None) -> Path:
 def main():
     path = criar_workbook_inicial()
     print(f"Excel criado: {path}")
-    print(f"Membros: {len(MEMBROS_SEED)} · Abas: 14")
+    print(f"Membros: {len(MEMBROS_SEED)} · Abas: 16")
 
 
 if __name__ == "__main__":

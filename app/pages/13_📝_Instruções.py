@@ -31,6 +31,8 @@ st.markdown(
 | Consagrações | Consagrações | Registro ao Sagrado Coração |
 | Qualidade | Inconsistências | Corrigir cadastro |
 | Memória | Memorial | Falecidos |
+| Sugestões | Sugestões | Ideias e comentários sobre o app |
+| Reunião + IA | Reunião IA | Áudio da reunião semanal → resumo (OpenAI/Claude) |
 | Dados | Configurações / Relatórios | Backup e exportação |
 
 **Salvar:** em cada tabela use **💾 Salvar**.

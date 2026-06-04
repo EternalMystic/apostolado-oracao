@@ -96,6 +96,8 @@ def test_tabela_id(ler, salvar, cols, id_val: int) -> None:
         row["cargo"] = MARCADOR
     if "nome" in cols:
         row["nome"] = MARCADOR
+    if "texto" in cols:
+        row["texto"] = MARCADOR
     if "membro_nome" in cols:
         row["membro_nome"] = MARCADOR
     if "item" in cols:
@@ -203,6 +205,8 @@ def main() -> None:
     test_tabela_id(dm.ler_centros, dm.salvar_centros, ta.COL_CENTROS, 99909)
     test_tabela_id(dm.ler_comunicacoes, dm.salvar_comunicacoes, ta.COL_COMUNICACOES, 99910)
     test_tabela_id(dm.ler_reunioes, dm.salvar_reunioes, ta.COL_REUNIOES, 99911)
+    test_tabela_id(dm.ler_sugestoes, dm.salvar_sugestoes, ta.COL_SUGESTOES, 99912)
+    test_tabela_id(dm.ler_reunioes_ia, dm.salvar_reunioes_ia, ta.COL_REUNIOES_IA, 99913)
     print("OK — todos os CRUDs gravam e leem o Excel corretamente.")
 
 

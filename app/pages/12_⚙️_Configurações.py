@@ -42,6 +42,23 @@ if st.button("🔄 Recriar apostolado.xlsx do seed"):
 st.caption(f"Arquivo de dados: {EXCEL_PATH}")
 
 st.divider()
+with st.expander("🤖 Inteligência artificial (reunião semanal)"):
+    st.markdown(
+        """
+Configure no **Streamlit Cloud → Settings → Secrets**:
+
+```toml
+OPENAI_API_KEY = "sk-..."
+ANTHROPIC_API_KEY = "sk-ant-..."  # opcional
+AI_PREFERENCIA = "openai"
+```
+
+Use a página **Reunião IA** para enviar o áudio (~1h10) ou colar a transcrição.
+Não grave a chave na tabela Config abaixo (risco de vazamento).
+"""
+    )
+
+st.divider()
 st.subheader("☁️ Backup na nuvem (importante)")
 st.caption(
     "No acesso pela internet, baixe uma cópia do Excel periodicamente "

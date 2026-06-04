@@ -42,6 +42,22 @@ COL_COMUNICACOES = [
 COL_REUNIOES = [
     "id", "data", "tipo", "titulo", "presentes", "deliberacoes", "ata_num", "observacoes",
 ]
+COL_SUGESTOES = [
+    "id", "data", "autor", "tipo", "texto", "status", "resposta", "observacoes",
+]
+COL_REUNIOES_IA = [
+    "id",
+    "data",
+    "titulo",
+    "arquivo_audio",
+    "transcricao_arquivo",
+    "duracao_min",
+    "status",
+    "resumo",
+    "explicacao",
+    "pontos_chave",
+    "observacoes",
+]
 
 SHEET_DIRETORIA = "Diretoria"
 SHEET_ZELADORES = "Zeladores"
@@ -49,6 +65,8 @@ SHEET_INTENCOES_PAPA = "Intencoes_Papa"
 SHEET_CENTROS = "Centros"
 SHEET_COMUNICACOES = "Comunicacoes"
 SHEET_REUNIOES = "Reunioes"
+SHEET_SUGESTOES = "Sugestoes"
+SHEET_REUNIOES_IA = "Reunioes_IA"
 
 COL_MEMBROS_EXT = ["tipo_membro", "comunidade", "data_inscricao", "fita_consagracao"]
 COL_INTENCOES_EXT = ["categoria", "prioridade"]

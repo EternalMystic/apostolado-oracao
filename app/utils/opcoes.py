@@ -84,3 +84,22 @@ TIPOS_REUNIAO = [
 ]
 
 DIVULGADA = ["S", "N"]
+
+TIPOS_SUGESTAO = [
+    "Sugestão",
+    "Comentário",
+    "Elogio",
+    "Dúvida",
+    "Problema no app",
+    "Ideia nova",
+]
+
+STATUS_SUGESTAO = ["Nova", "Em análise", "Respondida", "Implementada", "Arquivada"]
+
+STATUS_REUNIAO_IA = [
+    "Pendente",
+    "Transcrevendo",
+    "Resumindo",
+    "Concluído",
+    "Erro",
+]

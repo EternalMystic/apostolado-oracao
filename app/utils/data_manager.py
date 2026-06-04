@@ -93,6 +93,8 @@ def _migrar_excel() -> None:
             pd.DataFrame(columns=_ta.COL_COMUNICACOES),
         ),
         _ta.SHEET_REUNIOES: (_ta.COL_REUNIOES, pd.DataFrame(columns=_ta.COL_REUNIOES)),
+        _ta.SHEET_SUGESTOES: (_ta.COL_SUGESTOES, pd.DataFrame(columns=_ta.COL_SUGESTOES)),
+        _ta.SHEET_REUNIOES_IA: (_ta.COL_REUNIOES_IA, pd.DataFrame(columns=_ta.COL_REUNIOES_IA)),
     }
     for nome, (cols, vazio) in novas_abas.items():
         if nome not in todas:
@@ -466,6 +468,34 @@ def salvar_reunioes(df: pd.DataFrame) -> None:
         _ta.SHEET_REUNIOES,
         df,
         _ta.COL_REUNIOES,
+        id_col="id",
+        colunas_data=["data"],
+    )
+
+
+def ler_sugestoes() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_SUGESTOES, _ta.COL_SUGESTOES)
+
+
+def salvar_sugestoes(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(
+        _ta.SHEET_SUGESTOES,
+        df,
+        _ta.COL_SUGESTOES,
+        id_col="id",
+        colunas_data=["data"],
+    )
+
+
+def ler_reunioes_ia() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_REUNIOES_IA, _ta.COL_REUNIOES_IA)
+
+
+def salvar_reunioes_ia(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(
+        _ta.SHEET_REUNIOES_IA,
+        df,
+        _ta.COL_REUNIOES_IA,
         id_col="id",
         colunas_data=["data"],
     )
