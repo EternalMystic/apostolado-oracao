@@ -17,7 +17,6 @@ st.set_page_config(page_title="Memorial", page_icon="📜", layout="wide")
 require_login()
 inject_css()
 st.title("📜 Memorial – Membros Falecidos")
-st.caption("Em memória dos que nos precederam no caminho da fé.")
 
 for nome, nasc, falec, obs in MEMORIAL:
     with st.container():

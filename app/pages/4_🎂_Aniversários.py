@@ -16,7 +16,6 @@ st.set_page_config(page_title="Aniversários", page_icon="🎂", layout="wide")
 require_login()
 inject_css()
 st.title("🎂 Aniversários")
-st.caption("Uma ligação no dia do aniversário é apostolado de proximidade.")
 
 dias = st.slider("Próximos dias", 7, 90, 30)
 lista = aniversariantes_proximos(dias)
@@ -35,7 +34,7 @@ if lista:
             f"{a['telefone'] or 'sem telefone'} · {a['situacao']}"
         )
 else:
-    st.info("Nenhum aniversário no período.")
+    st.write("Nenhum aniversário neste período.")
 
 st.divider()
 st.subheader("Todos com data de nascimento (exceto falecidos)")

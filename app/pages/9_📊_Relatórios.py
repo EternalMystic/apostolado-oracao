@@ -53,7 +53,3 @@ if st.button("📥 Exportar resumo CSV"):
     pd.DataFrame(rows).to_csv(path, index=False, encoding="utf-8-sig")
     st.success(f"Exportado: {path}")
 
-st.info(
-    "Relatório PDF mensal: execute `r_scripts/relatorio_mensal.R` "
-    "(requer R + ggplot2)."
-)

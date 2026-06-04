@@ -1,4 +1,4 @@
-"""Entrada com senha — tela simples para 50+."""
+"""Entrada por senha — uma tela só, sem instruções longas."""
 from __future__ import annotations
 
 import os
@@ -26,51 +26,22 @@ def require_login() -> None:
         return
 
     inject_css(COR_PADRAO)
-
-    st.markdown('<div class="login-wrap">', unsafe_allow_html=True)
+    st.markdown('<div class="login-tela">', unsafe_allow_html=True)
     st.markdown(
-        """
-<div class="cartao-login">
-  <h1>✝️ Apostolado da Oração</h1>
-  <p class="sub">Paróquia São Jorge · Nova Odessa – SP</p>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("#### Entrar no sistema")
-    st.markdown(
-        '<p class="passo"><b>Passo 1:</b> Peça a <b>senha</b> ao coordenador do Apostolado.</p>',
+        '<p class="login-titulo">✝️ Apostolado da Oração</p>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<p class="passo"><b>Passo 2:</b> Digite abaixo e toque no botão roxo <b>Entrar</b>.</p>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<p class="passo"><b>No celular:</b> pode favoritar este site no Chrome ou Safari.</p>',
+        '<p class="login-sub">Paróquia São Jorge · Nova Odessa</p>',
         unsafe_allow_html=True,
     )
 
-    with st.form("login"):
-        entrada = st.text_input(
-            "Senha",
-            type="password",
-            placeholder="Digite a senha aqui",
-        )
-        entrar = st.form_submit_button(
-            "✝️  Entrar no sistema",
-            type="primary",
-            use_container_width=True,
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    if entrar:
+    entrada = st.text_input("Senha", type="password", label_visibility="visible")
+    if st.button("ENTRAR", type="primary", use_container_width=True):
         if entrada == senha:
             st.session_state.auth_ok = True
             st.rerun()
-        st.error("Senha incorreta. Ligue para o coordenador e tente novamente.")
+        st.error("Senha incorreta.")
 
-    st.info("Não precisa baixar aplicativo — só abrir no navegador da internet.")
+    st.markdown("</div>", unsafe_allow_html=True)
     st.stop()

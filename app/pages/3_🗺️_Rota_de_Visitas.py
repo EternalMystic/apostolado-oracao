@@ -17,8 +17,7 @@ from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
 st.set_page_config(page_title="Rota de Visitas", page_icon="🗺️", layout="wide")
 require_login()
 inject_css()
-st.title("🗺️ Rota de Visitas Domiciliares")
-st.caption("Ore um Pai-Nosso antes de cada visita. (São Josemaría Escrivá)")
+st.title("🗺️ Rota de Visitas")
 
 
 def ordem_bairro(b: str) -> int:
@@ -109,8 +108,3 @@ if st.button("💾 Salvar rota"):
     salvar_entregas(edited)
     st.success("Rota salva.")
 
-if st.button("🦀 Otimizar ordem (Rust TSP)"):
-    st.info(
-        "Execute `COMPILAR_RUST.bat` e depois rode o otimizador com as coordenadas. "
-        "A ordenação por bairro já está aplicada."
-    )

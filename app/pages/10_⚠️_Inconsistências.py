@@ -19,8 +19,7 @@ from utils.data_manager import (
 st.set_page_config(page_title="Inconsistências", page_icon="⚠️", layout="wide")
 require_login()
 inject_css()
-st.title("⚠️ Inconsistências – Revisão Pastoral")
-st.caption("Cada inconsistência é um convite ao cuidado. Resolva com calma e caridade.")
+st.title("⚠️ Inconsistências")
 
 crit = inconsistencias_criticas_abertas()
 if crit:
