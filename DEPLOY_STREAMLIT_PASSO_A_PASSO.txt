@@ -1,0 +1,54 @@
+APOSTOLADO - CORRIGIR DEPLOY NO STREAMLIT
+======================================
+
+ERRO 401 (Request failed)
+-----------------------
+Significa que o Streamlit perdeu acesso ao GitHub.
+
+Faca isto NA ORDEM:
+1. Abra https://github.com/settings/applications
+2. Clique em "Streamlit" (ou autorize de novo em share.streamlit.io)
+3. Em share.streamlit.io: canto superior direito -> Sair -> Entrar de novo com GitHub
+4. Volte em Deploy an app
+
+Se o repositorio nao aparecer na lista:
+- Confirme: https://github.com/EternalMystic/apostolado-oracao abre no navegador?
+
+
+ERRO "Unexpected error" no App URL
+----------------------------------
+NAO digite ".streamlit.app" no campo.
+
+Opcao A (mais facil): DEIXE O CAMPO App URL VAZIO.
+   O Streamlit gera um link automatico.
+
+Opcao B: digite SOMENTE isto no campo (sem .streamlit.app):
+   apostolado-sao-jorge-nova-odessa
+
+Se der erro de novo, use outro nome, ex:
+   apostolado-paroquia-sao-jorge
+
+
+SECRETS (Advanced settings)
+---------------------------
+1. Python version: escolha 3.11 (NAO use 3.14)
+2. No quadrado Secrets, apague TUDO e cole SOMENTE estas 2 linhas:
+
+APP_PASSWORD = "SaoJorge2026"
+
+3. Clique Save
+4. NAO coloque comentarios (#) no Secrets - da erro
+
+
+DEPLOY
+------
+Repository: EternalMystic/apostolado-oracao
+Branch: main
+Main file path: app/app.py
+App URL: (vazio ou apostolado-sao-jorge-nova-odessa)
+
+Clique Deploy e aguarde 2-5 minutos.
+
+Link final sera algo como:
+https://apostolado-sao-jorge-nova-odessa.streamlit.app
+ou o link que o Streamlit mostrar na tela "My apps".
