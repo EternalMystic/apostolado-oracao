@@ -1,4 +1,4 @@
-"""Entrada por senha — roxo e branco, alto contraste."""
+"""Entrada por senha."""
 from __future__ import annotations
 
 import os
@@ -27,7 +27,10 @@ def require_login() -> None:
 
     inject_login_css()
 
-    st.markdown('<p class="login-titulo">✝️ Apostolado da Oração</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="login-titulo">✝️ Apostolado da Oração</p>',
+        unsafe_allow_html=True,
+    )
     st.markdown(
         '<p class="login-sub">Paróquia São Jorge · Nova Odessa – SP</p>',
         unsafe_allow_html=True,
