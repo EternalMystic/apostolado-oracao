@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_VISITAS, ler_membros, ler_visitas, salvar_visitas
 from utils.dados_membros import ITENS_ENTREGA
-from utils.opcoes import REALIZADA
+from utils.opcoes import REALIZADA, TIPOS_VISITA
 
 st.set_page_config(page_title="Visitas", page_icon="🏠", layout="wide", initial_sidebar_state="auto")
 require_login()
@@ -67,6 +67,7 @@ tabela_crud(
     column_config={
         "item": st.column_config.SelectboxColumn(options=ITENS_ENTREGA),
         "realizada": st.column_config.SelectboxColumn(options=REALIZADA),
+        "tipo_visita": st.column_config.SelectboxColumn(options=TIPOS_VISITA),
         "data_visita": st.column_config.DateColumn("Data visita"),
     },
     colunas_data=["data_visita"],

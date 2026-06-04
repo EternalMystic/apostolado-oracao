@@ -12,13 +12,18 @@ COR_LILAS_CLARO = "#F3E5F5"
 
 ATALHOS_APP = [
     ("pages/2_🔍_Consulta_Rápida.py", "🔍", "Buscar membro"),
-    ("pages/4_🎂_Aniversários.py", "🎂", "Aniversários"),
     ("pages/3_🗺️_Rota_de_Visitas.py", "🗺️", "Rota de visitas"),
+    ("pages/4_🎂_Aniversários.py", "🎂", "Aniversários"),
+    ("pages/15_📿_Espiritualidade.py", "📿", "Espiritualidade"),
     ("pages/1_📋_Membros.py", "📋", "Membros"),
+    ("pages/16_👥_Diretoria.py", "👥", "Diretoria"),
     ("pages/6_📦_Entregas.py", "📦", "Entregas"),
     ("pages/14_🏠_Visitas.py", "🏠", "Visitas"),
-    ("pages/7_🙏_Intenções.py", "🙏", "Intenções"),
+    ("pages/7_🙏_Intenções.py", "🙏", "Mural de oração"),
+    ("pages/17_🏛️_Centros.py", "🏛️", "Centros"),
     ("pages/8_📅_Agenda.py", "📅", "Agenda"),
+    ("pages/18_📢_Comunicações.py", "📢", "Comunicações"),
+    ("pages/19_📒_Atas.py", "📒", "Atas"),
     ("pages/9_📊_Relatórios.py", "📊", "Relatórios"),
 ]
 

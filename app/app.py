@@ -12,8 +12,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils.auth import require_login
 from utils.data_manager import (
     aniversariantes_proximos,
+    contar_zeladores_ativos,
     inconsistencias_criticas_abertas,
+    ler_centros,
     ler_config,
+    ler_intencoes_papa,
     membros_sem_telefone,
     total_por_situacao,
 )
@@ -57,10 +60,16 @@ totais = total_por_situacao()
 ativos = totais.get("Ativo", 0) + totais.get("Ativo (presumido)", 0)
 aniv = aniversariantes_proximos(7)
 
-c1, c2, c3 = st.columns(3)
+c1, c2, c3, c4 = st.columns(4)
 c1.metric("Ativos", ativos)
 c2.metric("Aniversários (7 dias)", len(aniv))
-c3.metric("Sem telefone", len(membros_sem_telefone()))
+c3.metric("Zeladores", contar_zeladores_ativos())
+c4.metric("Centros", len(ler_centros()))
+
+papa = ler_intencoes_papa()
+if not papa.empty:
+    ult = papa.sort_values(["ano", "mes"], ascending=False).iloc[0]
+    st.info(f"Intenção do Papa ({int(ult['mes'])}/{int(ult['ano'])}): {ult.get('titulo', '')}")
 
 if aniv:
     st.markdown("#### Próximos aniversários")

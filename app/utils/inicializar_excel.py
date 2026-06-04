@@ -39,6 +39,10 @@ from data_manager import (
     SHEET_MEMORIAL,
     SHEET_VISITAS,
 )
+try:
+    from . import tabelas_apostolado as _ta
+except ImportError:
+    from utils import tabelas_apostolado as _ta
 
 COR_ROXO = "6A1B9A"
 
@@ -50,9 +54,15 @@ def _header_style(cell):
 
 
 def _df_membros() -> pd.DataFrame:
-    return pd.DataFrame(
-        [dict(zip(COL_MEMBROS, m)) for m in MEMBROS_SEED], columns=COL_MEMBROS
-    )
+    rows = []
+    for m in MEMBROS_SEED:
+        row = dict(zip(COL_MEMBROS[:14], m))
+        row["tipo_membro"] = "Associado"
+        row["comunidade"] = m[7] or ""
+        row["data_inscricao"] = m[5]
+        row["fita_consagracao"] = "Não"
+        rows.append(row)
+    return pd.DataFrame(rows, columns=COL_MEMBROS)
 
 
 def _df_inconsistencias() -> pd.DataFrame:
@@ -150,6 +160,21 @@ def criar_workbook_inicial(dest: Path | None = None) -> Path:
         SHEET_AGENDA: pd.DataFrame(columns=COL_AGENDA),
         SHEET_CONFIG: _df_config(),
         SHEET_MEMORIAL: _df_memorial(),
+        _ta.SHEET_DIRETORIA: pd.DataFrame(
+            [dict(zip(_ta.COL_DIRETORIA, t)) for t in _ta.DIRETORIA_SEED],
+            columns=_ta.COL_DIRETORIA,
+        ),
+        _ta.SHEET_ZELADORES: pd.DataFrame(columns=_ta.COL_ZELADORES),
+        _ta.SHEET_INTENCOES_PAPA: pd.DataFrame(
+            [dict(zip(_ta.COL_INTENCOES_PAPA, t)) for t in _ta.INTENCOES_PAPA_SEED],
+            columns=_ta.COL_INTENCOES_PAPA,
+        ),
+        _ta.SHEET_CENTROS: pd.DataFrame(
+            [dict(zip(_ta.COL_CENTROS, t)) for t in _ta.CENTROS_SEED],
+            columns=_ta.COL_CENTROS,
+        ),
+        _ta.SHEET_COMUNICACOES: pd.DataFrame(columns=_ta.COL_COMUNICACOES),
+        _ta.SHEET_REUNIOES: pd.DataFrame(columns=_ta.COL_REUNIOES),
     }
 
     wb = Workbook()
@@ -168,7 +193,7 @@ def criar_workbook_inicial(dest: Path | None = None) -> Path:
 def main():
     path = criar_workbook_inicial()
     print(f"Excel criado: {path}")
-    print(f"Membros: {len(MEMBROS_SEED)} · Abas: 8")
+    print(f"Membros: {len(MEMBROS_SEED)} · Abas: {len(sheets)}")
 
 
 if __name__ == "__main__":

@@ -12,20 +12,26 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_MEMBROS, ler_membros_df, salvar_membros_df
-from utils.opcoes import CONSAGRADA, SEXOS, SITUACOES
+from utils.data_manager import listar_comunidades
+from utils.opcoes import CONSAGRADA, FITA_CONSAGRACAO, SEXOS, SITUACOES, TIPO_MEMBRO
 
 st.set_page_config(page_title="Membros", page_icon="📋", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("📋 Membros")
 
+_coms = listar_comunidades() or [""]
 _cfg = {
     "id": st.column_config.NumberColumn("ID", min_value=1, step=1),
     "nasc": st.column_config.DateColumn("Nascimento"),
     "ingresso": st.column_config.DateColumn("Ingresso"),
+    "data_inscricao": st.column_config.DateColumn("Inscrição AO"),
     "sexo": st.column_config.SelectboxColumn("Sexo", options=SEXOS),
     "situacao": st.column_config.SelectboxColumn("Situação", options=SITUACOES),
     "consagrada": st.column_config.SelectboxColumn("Consagrada", options=CONSAGRADA),
+    "tipo_membro": st.column_config.SelectboxColumn("Tipo", options=TIPO_MEMBRO),
+    "comunidade": st.column_config.SelectboxColumn("Comunidade", options=_coms),
+    "fita_consagracao": st.column_config.SelectboxColumn("Fita vermelha", options=FITA_CONSAGRACAO),
 }
 
 
@@ -56,7 +62,7 @@ tabela_crud(
     carregar=ler_membros_df,
     salvar=salvar_membros_df,
     column_config=_cfg,
-    colunas_data=["nasc", "ingresso"],
+    colunas_data=["nasc", "ingresso", "data_inscricao"],
     id_col="id",
     aplicar_filtro=_filtro,
     altura=500,

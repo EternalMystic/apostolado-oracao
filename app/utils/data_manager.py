@@ -7,6 +7,12 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+try:
+    from . import tabelas_apostolado as _ta
+except ImportError:
+    from utils import tabelas_apostolado as _ta
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT / "data"
 BACKUPS_DIR = ROOT / "backups"
@@ -25,6 +31,7 @@ SHEET_MEMORIAL = "Memorial"
 COL_MEMBROS = [
     "id", "num_orig", "nome", "sexo", "nasc", "ingresso", "endereco", "bairro",
     "telefone", "funcao", "situacao", "consagrada", "observacoes", "pagina",
+    "tipo_membro", "comunidade", "data_inscricao", "fita_consagracao",
 ]
 COL_INCONSISTENCIAS = [
     "categoria", "prioridade", "descricao", "acao_sugerida", "resolvida",
@@ -35,13 +42,13 @@ COL_ENTREGAS = [
 ]
 COL_VISITAS = [
     "id", "membro_id", "membro_nome", "data_visita", "bairro", "item",
-    "realizada", "observacoes",
+    "realizada", "tipo_visita", "nota_pastoral", "observacoes",
 ]
 COL_CONSAGRACOES = [
     "id", "membro_id", "membro_nome", "data_consagracao", "local", "observacoes",
 ]
 COL_INTENCOES = [
-    "id", "data", "intencao", "solicitante", "status", "observacoes",
+    "id", "data", "categoria", "intencao", "solicitante", "status", "prioridade", "observacoes",
 ]
 COL_AGENDA = [
     "id", "data", "hora", "titulo", "tipo", "local", "responsavel", "observacoes",
@@ -50,11 +57,89 @@ COL_CONFIG = ["chave", "valor"]
 COL_MEMORIAL = ["nome", "nasc", "falecimento", "observacao"]
 
 
+def _migrar_excel() -> None:
+    """Adiciona abas e colunas novas sem apagar dados existentes."""
+    todas = pd.read_excel(EXCEL_PATH, sheet_name=None, engine="openpyxl")
+    mudou = False
+
+    novas_abas = {
+        _ta.SHEET_DIRETORIA: (
+            _ta.COL_DIRETORIA,
+            pd.DataFrame(
+                [dict(zip(_ta.COL_DIRETORIA, t)) for t in _ta.DIRETORIA_SEED],
+                columns=_ta.COL_DIRETORIA,
+            ),
+        ),
+        _ta.SHEET_ZELADORES: (_ta.COL_ZELADORES, pd.DataFrame(columns=_ta.COL_ZELADORES)),
+        _ta.SHEET_INTENCOES_PAPA: (
+            _ta.COL_INTENCOES_PAPA,
+            pd.DataFrame(
+                [dict(zip(_ta.COL_INTENCOES_PAPA, t)) for t in _ta.INTENCOES_PAPA_SEED],
+                columns=_ta.COL_INTENCOES_PAPA,
+            ),
+        ),
+        _ta.SHEET_CENTROS: (
+            _ta.COL_CENTROS,
+            pd.DataFrame(
+                [dict(zip(_ta.COL_CENTROS, t)) for t in _ta.CENTROS_SEED],
+                columns=_ta.COL_CENTROS,
+            ),
+        ),
+        _ta.SHEET_COMUNICACOES: (
+            _ta.COL_COMUNICACOES,
+            pd.DataFrame(columns=_ta.COL_COMUNICACOES),
+        ),
+        _ta.SHEET_REUNIOES: (_ta.COL_REUNIOES, pd.DataFrame(columns=_ta.COL_REUNIOES)),
+    }
+    for nome, (cols, vazio) in novas_abas.items():
+        if nome not in todas:
+            todas[nome] = vazio
+            mudou = True
+
+    if SHEET_MEMBROS in todas:
+        df = todas[SHEET_MEMBROS]
+        for c in COL_MEMBROS:
+            if c not in df.columns:
+                df[c] = ""
+                mudou = True
+        todas[SHEET_MEMBROS] = df.reindex(columns=COL_MEMBROS)
+
+    if SHEET_INTENCOES in todas:
+        df = todas[SHEET_INTENCOES].copy()
+        if "categoria" not in df.columns:
+            df["categoria"] = "Pedido"
+            mudou = True
+        if "prioridade" not in df.columns:
+            df["prioridade"] = "Normal"
+            mudou = True
+        for c in COL_INTENCOES:
+            if c not in df.columns:
+                df[c] = ""
+                mudou = True
+        todas[SHEET_INTENCOES] = df.reindex(columns=COL_INTENCOES)
+
+    if SHEET_VISITAS in todas:
+        df = todas[SHEET_VISITAS]
+        for c in COL_VISITAS:
+            if c not in df.columns:
+                df[c] = ""
+                mudou = True
+        todas[SHEET_VISITAS] = df.reindex(columns=COL_VISITAS)
+
+    if mudou:
+        _backup_antes_de_escrever()
+        with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl") as writer:
+            for nome, sdf in todas.items():
+                sdf.to_excel(writer, sheet_name=nome, index=False)
+
+
 def _ensure_excel() -> None:
     if not EXCEL_PATH.exists():
         from inicializar_excel import criar_workbook_inicial
 
         criar_workbook_inicial()
+    else:
+        _migrar_excel()
 
 
 def _backup_antes_de_escrever() -> Path | None:
@@ -115,6 +200,10 @@ def _membro_tuple(row: pd.Series) -> tuple:
         str(row.get("consagrada", "") or ""),
         str(row.get("observacoes", "") or ""),
         str(row.get("pagina", "") or ""),
+        str(row.get("tipo_membro", "") or "Associado"),
+        str(row.get("comunidade", "") or ""),
+        _as_date(row.get("data_inscricao")),
+        str(row.get("fita_consagracao", "") or "Não"),
     )
 
 
@@ -128,7 +217,7 @@ def salvar_membros_df(df: pd.DataFrame) -> None:
         df,
         COL_MEMBROS,
         id_col="id",
-        colunas_data=["nasc", "ingresso"],
+        colunas_data=["nasc", "ingresso", "data_inscricao"],
     )
 
 
@@ -287,6 +376,101 @@ def salvar_visitas(df: pd.DataFrame) -> None:
         id_col="id",
         colunas_data=["data_visita"],
     )
+
+
+def _ler_aba_generica(sheet: str, cols: list[str]) -> pd.DataFrame:
+    return _ler_generico(sheet, cols)
+
+
+def _salvar_aba_generica(
+    sheet: str, df: pd.DataFrame, cols: list[str], **kwargs
+) -> None:
+    _salvar_generico(sheet, df, cols, **kwargs)
+
+
+def ler_diretoria() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_DIRETORIA, _ta.COL_DIRETORIA)
+
+
+def salvar_diretoria(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(
+        _ta.SHEET_DIRETORIA,
+        df,
+        _ta.COL_DIRETORIA,
+        id_col="id",
+        colunas_data=["mandato_inicio"],
+    )
+
+
+def ler_zeladores() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_ZELADORES, _ta.COL_ZELADORES)
+
+
+def salvar_zeladores(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(
+        _ta.SHEET_ZELADORES,
+        df,
+        _ta.COL_ZELADORES,
+        id_col="id",
+        colunas_data=["data_posse"],
+    )
+
+
+def ler_intencoes_papa() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_INTENCOES_PAPA, _ta.COL_INTENCOES_PAPA)
+
+
+def salvar_intencoes_papa(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(_ta.SHEET_INTENCOES_PAPA, df, _ta.COL_INTENCOES_PAPA, id_col="id")
+
+
+def ler_centros() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_CENTROS, _ta.COL_CENTROS)
+
+
+def salvar_centros(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(_ta.SHEET_CENTROS, df, _ta.COL_CENTROS, id_col="id")
+
+
+def ler_comunicacoes() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_COMUNICACOES, _ta.COL_COMUNICACOES)
+
+
+def salvar_comunicacoes(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(
+        _ta.SHEET_COMUNICACOES,
+        df,
+        _ta.COL_COMUNICACOES,
+        id_col="id",
+        colunas_data=["data"],
+    )
+
+
+def ler_reunioes() -> pd.DataFrame:
+    return _ler_aba_generica(_ta.SHEET_REUNIOES, _ta.COL_REUNIOES)
+
+
+def salvar_reunioes(df: pd.DataFrame) -> None:
+    _salvar_aba_generica(
+        _ta.SHEET_REUNIOES,
+        df,
+        _ta.COL_REUNIOES,
+        id_col="id",
+        colunas_data=["data"],
+    )
+
+
+def contar_zeladores_ativos() -> int:
+    z = ler_zeladores()
+    if z.empty:
+        return 0
+    return len(z[z["ativo"].astype(str).str.lower().isin(("sim", "s"))])
+
+
+def listar_comunidades() -> list[str]:
+    cfg = ler_config()
+    raw = cfg.get("comunidades", "")
+    return [c.strip() for c in raw.replace("·", "|").split("|") if c.strip()]
 
 
 def ler_consagracoes() -> pd.DataFrame:

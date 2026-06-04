@@ -1,4 +1,4 @@
-"""Referência rápida."""
+"""Referência do sistema completo."""
 import sys
 from pathlib import Path
 
@@ -16,21 +16,27 @@ st.title("📝 Referência")
 
 st.markdown(
     """
-| Tabela | Onde editar (CRUD) |
-|--------|-------------------|
-| Membros | **Membros** — ➕ Nova linha · editar · excluir linha · **Salvar** |
-| Entregas / rota | **Entregas** ou **Rota de Visitas** |
-| Visitas | **Visitas** |
-| Consagrações | **Consagrações** |
-| Intenções | **Intenções** |
-| Agenda | **Agenda** |
-| Inconsistências | **Inconsistências** |
-| Memorial | **Memorial** |
-| Configuração | **Configurações** |
-| Exportar | **Relatórios** |
+### Módulos do sistema (como nos apostolados e paróquias)
 
-**Dados:** `data/apostolado.xlsx` · **Backup:** pasta `backups/`
+| Área | Página | Função |
+|------|--------|--------|
+| Cadastro | Membros | Associados, zeladores, comunidade, fita |
+| Busca | Consulta Rápida | Achar membro no celular |
+| Espiritualidade | Espiritualidade | Oferecimento + intenções do Papa |
+| Pastoral | Rota / Visitas / Entregas | Visitas domiciliares e materiais |
+| Oração | Mural de oração | Pedidos da comunidade |
+| Organização | Diretoria / Centros / Atas | Estrutura do AO na paróquia |
+| Agenda | Agenda | Reuniões, missas, formações |
+| Comunicação | Comunicações | Registro + WhatsApp |
+| Consagrações | Consagrações | Registro ao Sagrado Coração |
+| Qualidade | Inconsistências | Corrigir cadastro |
+| Memória | Memorial | Falecidos |
+| Dados | Configurações / Relatórios | Backup e exportação |
 
-Coordenador(a) do Apostolado para senha e dúvidas.
+**Salvar:** em cada tabela use **💾 Salvar**.
+
+**Celular:** menu ☰ → **Adicionar à tela inicial**.
+
+Coordenador(a) do Apostolado para senha.
 """
 )
