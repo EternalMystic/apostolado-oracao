@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.data_manager import aniversariantes_proximos, ler_membros
 
-st.set_page_config(page_title="Aniversários", page_icon="🎂", layout="wide")
+st.set_page_config(page_title="Aniversários", page_icon="🎂", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("🎂 Aniversários")

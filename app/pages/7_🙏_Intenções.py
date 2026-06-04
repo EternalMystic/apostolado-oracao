@@ -13,7 +13,7 @@ from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_INTENCOES, ler_intencoes, salvar_intencoes
 from utils.opcoes import STATUS_INTENCAO
 
-st.set_page_config(page_title="Intenções", page_icon="🙏", layout="wide")
+st.set_page_config(page_title="Intenções", page_icon="🙏", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("🙏 Intenções")

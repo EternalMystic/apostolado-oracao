@@ -118,7 +118,7 @@ def tabela_crud(
     colunas_data: list[str] | None = None,
     id_col: str | None = "id",
     aplicar_filtro: Callable[[pd.DataFrame], tuple[pd.DataFrame, bool]] | None = None,
-    altura: int | None = None,
+    altura: int | None = 420,
 ) -> pd.DataFrame | None:
     """
     Exibe tabela editável com CRUD completo.
@@ -155,7 +155,7 @@ def tabela_crud(
     if usa_rid:
         cfg[RID] = st.column_config.NumberColumn("Ref.", disabled=True, width="small")
 
-    c1, c2, c3 = st.columns([1, 1, 2])
+    c1, c2, c3 = st.columns([1, 1, 1])
     if c1.button("➕ Nova linha", key=f"{chave}_add"):
         nova = {c: "" for c in colunas}
         if id_col and id_col in colunas:
@@ -166,7 +166,7 @@ def tabela_crud(
         st.rerun()
 
     if filtrado:
-        c3.warning("Filtro ativo: linhas ocultas não serão apagadas ao salvar.")
+        st.warning("Filtro ativo: linhas ocultas não serão apagadas ao salvar.")
 
     st.caption(f"{len(exibir)} linha(s) · Total no cadastro: {len(base)}")
 
@@ -179,7 +179,7 @@ def tabela_crud(
         key=f"{chave}_editor",
     )
 
-    if c2.button("💾 Salvar tabela", type="primary", key=f"{chave}_save"):
+    if c2.button("💾 Salvar", type="primary", key=f"{chave}_save"):
         work = edited.copy()
         if usa_rid:
             work = sem_row_ids(work)

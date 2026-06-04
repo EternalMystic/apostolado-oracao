@@ -19,7 +19,7 @@ from utils.data_manager import (
 )
 from utils.opcoes import PRIORIDADES, RESOLVIDA
 
-st.set_page_config(page_title="Inconsistências", page_icon="⚠️", layout="wide")
+st.set_page_config(page_title="Inconsistências", page_icon="⚠️", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("⚠️ Inconsistências")

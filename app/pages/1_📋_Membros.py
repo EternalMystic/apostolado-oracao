@@ -14,7 +14,7 @@ from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_MEMBROS, ler_membros_df, salvar_membros_df
 from utils.opcoes import CONSAGRADA, SEXOS, SITUACOES
 
-st.set_page_config(page_title="Membros", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Membros", page_icon="📋", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("📋 Membros")

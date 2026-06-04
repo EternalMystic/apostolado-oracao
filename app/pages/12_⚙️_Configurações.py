@@ -18,7 +18,7 @@ from utils.data_manager import (
 )
 from utils.inicializar_excel import criar_workbook_inicial
 
-st.set_page_config(page_title="Configurações", page_icon="⚙️", layout="wide")
+st.set_page_config(page_title="Configurações", page_icon="⚙️", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("⚙️ Configurações")

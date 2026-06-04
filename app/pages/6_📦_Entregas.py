@@ -15,7 +15,7 @@ from utils.data_manager import COL_ENTREGAS, ler_entregas, salvar_entregas
 from utils.dados_membros import ITENS_ENTREGA
 from utils.opcoes import ENTREGUE
 
-st.set_page_config(page_title="Entregas", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Entregas", page_icon="📦", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("📦 Entregas")

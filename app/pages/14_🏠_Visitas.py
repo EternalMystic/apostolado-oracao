@@ -15,7 +15,7 @@ from utils.data_manager import COL_VISITAS, ler_membros, ler_visitas, salvar_vis
 from utils.dados_membros import ITENS_ENTREGA
 from utils.opcoes import REALIZADA
 
-st.set_page_config(page_title="Visitas", page_icon="🏠", layout="wide")
+st.set_page_config(page_title="Visitas", page_icon="🏠", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("🏠 Visitas")

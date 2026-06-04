@@ -16,7 +16,7 @@ from utils.data_manager import ler_entregas, ler_membros, salvar_entregas
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
 from utils.opcoes import ENTREGUE
 
-st.set_page_config(page_title="Rota de Visitas", page_icon="🗺️", layout="wide")
+st.set_page_config(page_title="Rota de Visitas", page_icon="🗺️", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("🗺️ Rota de Visitas")

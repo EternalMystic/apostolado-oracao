@@ -20,7 +20,7 @@ from utils.data_manager import (
     total_por_situacao,
 )
 
-st.set_page_config(page_title="Relatórios", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Relatórios", page_icon="📊", layout="wide", initial_sidebar_state="auto")
 require_login()
 inject_css()
 st.title("📊 Relatórios Pastorais")
