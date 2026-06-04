@@ -1,0 +1,19 @@
+name: Verificar app Streamlit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r app/requirements.txt
+      - run: python app/utils/inicializar_excel.py
+      - run: python -c "import sys; sys.path.insert(0,'app'); from utils.data_manager import ler_membros; assert len(ler_membros())>=56"
