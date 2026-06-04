@@ -1,11 +1,11 @@
-"""Entrada por senha — uma tela só, sem instruções longas."""
+"""Entrada por senha — roxo e branco, alto contraste."""
 from __future__ import annotations
 
 import os
 
 import streamlit as st
 
-from utils.ui import COR_PADRAO, inject_css
+from utils.ui import inject_login_css
 
 
 def _senha_configurada() -> str | None:
@@ -25,23 +25,19 @@ def require_login() -> None:
     if st.session_state.get("auth_ok"):
         return
 
-    inject_css(COR_PADRAO)
-    st.markdown('<div class="login-tela">', unsafe_allow_html=True)
+    inject_login_css()
+
+    st.markdown('<p class="login-titulo">✝️ Apostolado da Oração</p>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="login-titulo">✝️ Apostolado da Oração</p>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<p class="login-sub">Paróquia São Jorge · Nova Odessa</p>',
+        '<p class="login-sub">Paróquia São Jorge · Nova Odessa – SP</p>',
         unsafe_allow_html=True,
     )
 
-    entrada = st.text_input("Senha", type="password", label_visibility="visible")
+    entrada = st.text_input("Senha", type="password", placeholder="Digite a senha")
     if st.button("ENTRAR", type="primary", use_container_width=True):
         if entrada == senha:
             st.session_state.auth_ok = True
             st.rerun()
         st.error("Senha incorreta.")
 
-    st.markdown("</div>", unsafe_allow_html=True)
     st.stop()

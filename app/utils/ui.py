@@ -1,151 +1,232 @@
-"""Visual limpo, cores nítidas — uso intuitivo sem textos longos."""
+"""Tema roxo + branco, alto contraste."""
 from __future__ import annotations
 
 import streamlit as st
 
-COR_PADRAO = "#6A1B9A"
-COR_ROXO_ESCURO = "#3E1078"
-COR_ROXO_BORDA = "#5E1A9E"
-COR_BRANCO = "#FFFFFF"
-COR_TEXTO = "#0D0D0D"
-COR_TEXTO_SUAVE = "#333333"
+ROXO = "#4A148C"
+ROXO_ESCURO = "#311B92"
+BRANCO = "#FFFFFF"
 
 
-def inject_css(cor: str = COR_PADRAO) -> None:
+def inject_css(cor: str = ROXO) -> None:
     st.markdown(
         f"""
 <style>
-    .stApp {{
-        background: {COR_ROXO_ESCURO} !important;
+    /* Fundo geral: roxo */
+    .stApp, [data-testid="stAppViewContainer"] {{
+        background: {ROXO_ESCURO} !important;
     }}
-    .main .block-container {{
-        background: {COR_BRANCO} !important;
-        border-radius: 16px !important;
+
+    /* Painel principal: branco */
+    [data-testid="stAppViewContainer"] .main .block-container {{
+        background: {BRANCO} !important;
+        border-radius: 14px !important;
         padding: 1.75rem 2rem 2.5rem !important;
         margin: 1rem auto 1.5rem !important;
         max-width: 1080px !important;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
-        border: 3px solid #B388FF !important;
+        border: 4px solid {BRANCO} !important;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.45) !important;
     }}
 
-    html, body, [class*="css"], p, label, span {{
-        color: {COR_TEXTO} !important;
+    /* Texto dentro do painel branco: roxo */
+    .main .block-container,
+    .main .block-container p,
+    .main .block-container label,
+    .main .block-container span,
+    .main .block-container li,
+    .main .block-container td,
+    .main .block-container th,
+    .main .block-container [data-testid="stMarkdownContainer"] {{
+        color: {ROXO} !important;
     }}
-    h1 {{ font-size: 2rem !important; color: {cor} !important; font-weight: 800 !important; }}
-    h2 {{ font-size: 1.5rem !important; color: {cor} !important; font-weight: 700 !important; }}
-    h3 {{ font-size: 1.25rem !important; color: {COR_TEXTO} !important; font-weight: 700 !important; }}
+    .main .block-container h1,
+    .main .block-container h2,
+    .main .block-container h3 {{
+        color: {ROXO} !important;
+        font-weight: 800 !important;
+    }}
+    .main .block-container h1 {{ font-size: 2rem !important; }}
+    .main .block-container h2 {{ font-size: 1.5rem !important; }}
 
+    /* Sidebar: roxo com texto branco */
     [data-testid="stSidebar"] {{
-        background: {cor} !important;
-        border-right: 4px solid #B388FF !important;
+        background: {ROXO} !important;
+        border-right: 4px solid {BRANCO} !important;
     }}
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebarNav"] a,
     [data-testid="stSidebarNav"] span {{
-        color: {COR_BRANCO} !important;
+        color: {BRANCO} !important;
         font-weight: 600 !important;
-    }}
-    [data-testid="stSidebarNav"] a {{
-        color: {COR_BRANCO} !important;
-        font-size: 1.05rem !important;
     }}
     [data-testid="stSidebarNav"] a[aria-current="page"] {{
-        background: rgba(255,255,255,0.25) !important;
+        background: {BRANCO} !important;
+        color: {ROXO} !important;
         border-radius: 8px !important;
+        font-weight: 800 !important;
+    }}
+    [data-testid="stSidebarNav"] a[aria-current="page"] span {{
+        color: {ROXO} !important;
     }}
 
-    /* Botões normais */
-    .stButton > button {{
-        background: {cor} !important;
-        color: {COR_BRANCO} !important;
+    /* Botões: roxo + texto branco */
+    .stButton > button,
+    button[kind="primary"],
+    button[kind="secondary"],
+    [data-testid="stFormSubmitButton"] button {{
+        background: {ROXO} !important;
+        color: {BRANCO} !important;
+        border: 3px solid {ROXO_ESCURO} !important;
         font-size: 1.15rem !important;
         font-weight: 800 !important;
         min-height: 3rem !important;
-        border: 3px solid {COR_ROXO_ESCURO} !important;
         border-radius: 10px !important;
     }}
-
-    /* Botão ENTRAR (formulário) — texto sempre visível */
-    .stForm button, [data-testid="stFormSubmitButton"] button,
-    button[kind="formSubmit"], button[kind="primaryFormSubmit"] {{
-        background: {cor} !important;
-        color: {COR_BRANCO} !important;
-        font-size: 1.3rem !important;
-        font-weight: 800 !important;
-        min-height: 3.5rem !important;
-        border: 3px solid {COR_ROXO_ESCURO} !important;
-        border-radius: 10px !important;
+    .stButton > button p,
+    .stButton > button span,
+    button[kind="primary"] p,
+    button[kind="primary"] span {{
+        color: {BRANCO} !important;
     }}
 
-    /* Atalhos do menu principal */
+    /* Links / atalhos: branco com borda roxa */
     [data-testid="stPageLink-Button"] {{
-        background: {COR_BRANCO} !important;
-        color: {cor} !important;
-        border: 3px solid {cor} !important;
-        border-radius: 12px !important;
-        min-height: 3.25rem !important;
-        font-size: 1.2rem !important;
+        background: {BRANCO} !important;
+        color: {ROXO} !important;
+        border: 3px solid {ROXO} !important;
         font-weight: 800 !important;
+        min-height: 3rem !important;
     }}
-    [data-testid="stPageLink-Button"]:hover {{
-        background: #F3E5F5 !important;
+    [data-testid="stPageLink-Button"] p,
+    [data-testid="stPageLink-Button"] span {{
+        color: {ROXO} !important;
     }}
 
+    /* Campos de texto */
     .stTextInput label {{
-        color: {COR_TEXTO} !important;
-        font-size: 1.15rem !important;
+        color: {ROXO} !important;
         font-weight: 700 !important;
+        font-size: 1.1rem !important;
     }}
     .stTextInput input {{
-        background: {COR_BRANCO} !important;
-        color: {COR_TEXTO} !important;
-        border: 3px solid {cor} !important;
-        font-size: 1.15rem !important;
-        min-height: 3rem !important;
+        background: {BRANCO} !important;
+        color: {ROXO} !important;
+        border: 3px solid {ROXO} !important;
+        font-size: 1.1rem !important;
     }}
 
+    /* Métricas */
+    div[data-testid="metric-container"] {{
+        background: {BRANCO} !important;
+        border: 3px solid {ROXO} !important;
+        border-radius: 10px !important;
+    }}
     [data-testid="stMetricValue"] {{
-        font-size: 2.5rem !important;
-        color: {cor} !important;
+        color: {ROXO} !important;
         font-weight: 800 !important;
+        font-size: 2.25rem !important;
     }}
     [data-testid="stMetricLabel"] {{
-        color: {COR_TEXTO} !important;
-        font-size: 1.05rem !important;
+        color: {ROXO} !important;
         font-weight: 700 !important;
     }}
-    div[data-testid="metric-container"] {{
-        background: #F3E5F5 !important;
-        border: 3px solid {cor} !important;
-        border-radius: 12px !important;
+
+    /* Tabelas / editor */
+    [data-testid="stDataFrame"],
+    [data-testid="stDataEditor"] {{
+        border: 2px solid {ROXO} !important;
     }}
 
-    .stAlert {{
-        font-size: 1.05rem !important;
-        font-weight: 600 !important;
-    }}
-
-    .login-tela .block-container {{
-        max-width: 440px !important;
-        padding: 2rem !important;
-    }}
-    .login-titulo {{
-        text-align: center;
-        color: {cor} !important;
-        font-size: 1.85rem !important;
-        font-weight: 800 !important;
-        margin-bottom: 0.25rem !important;
-    }}
-    .login-sub {{
-        text-align: center;
-        color: {COR_TEXTO_SUAVE} !important;
-        font-size: 1.05rem !important;
-        margin-bottom: 1.5rem !important;
+    .stCaption {{
+        color: {ROXO} !important;
     }}
 </style>
 """,
         unsafe_allow_html=True,
     )
+
+
+def inject_login_css() -> None:
+    """Login: cartão branco centralizado sobre fundo roxo."""
+    st.markdown(
+        f"""
+<style>
+    .stApp, [data-testid="stAppViewContainer"] {{
+        background: {ROXO_ESCURO} !important;
+    }}
+    [data-testid="stAppViewContainer"] .main .block-container {{
+        background: {BRANCO} !important;
+        max-width: 420px !important;
+        margin: 3rem auto !important;
+        padding: 2.5rem 2rem !important;
+        border: 4px solid {BRANCO} !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+    }}
+    .main .block-container p,
+    .main .block-container label,
+    .main .block-container span,
+    .main .block-container h1,
+    .main .block-container h2,
+    .main .block-container h3 {{
+        color: {ROXO} !important;
+    }}
+    .login-titulo {{
+        text-align: center !important;
+        font-size: 1.9rem !important;
+        font-weight: 800 !important;
+        color: {ROXO} !important;
+        margin: 0 0 0.35rem 0 !important;
+    }}
+    .login-sub {{
+        text-align: center !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        color: {ROXO} !important;
+        margin: 0 0 1.75rem 0 !important;
+    }}
+    .stTextInput label {{
+        color: {ROXO} !important;
+        font-weight: 800 !important;
+        font-size: 1.15rem !important;
+    }}
+    .stTextInput input {{
+        background: {BRANCO} !important;
+        color: {ROXO} !important;
+        border: 3px solid {ROXO} !important;
+    }}
+    .stButton > button,
+    button[kind="primary"] {{
+        background: {ROXO} !important;
+        color: {BRANCO} !important;
+        border: 3px solid {ROXO_ESCURO} !important;
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+        min-height: 3.25rem !important;
+    }}
+    .stButton > button p,
+    .stButton > button span,
+    button[kind="primary"] p,
+    button[kind="primary"] span {{
+        color: {BRANCO} !important;
+    }}
+    div[data-testid="stAlert"] {{
+        color: {ROXO} !important;
+        border: 2px solid {ROXO} !important;
+    }}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+# Compatibilidade com imports antigos
+COR_PADRAO = ROXO
 
 
 def sidebar_minima(paroquia: str, cidade: str) -> None:
