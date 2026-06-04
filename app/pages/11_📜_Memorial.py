@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import require_login
+from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -14,6 +15,7 @@ from utils.data_manager import ler_membros
 
 st.set_page_config(page_title="Memorial", page_icon="📜", layout="wide")
 require_login()
+inject_css()
 st.title("📜 Memorial – Membros Falecidos")
 st.caption("Em memória dos que nos precederam no caminho da fé.")
 

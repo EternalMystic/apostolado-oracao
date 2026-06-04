@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import require_login
+from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -13,6 +14,7 @@ from utils.data_manager import ler_consagracoes, ler_membros, salvar_consagracoe
 
 st.set_page_config(page_title="Consagrações", page_icon="✝️", layout="wide")
 require_login()
+inject_css()
 st.title("✝️ Consagrações")
 
 df = ler_consagracoes()

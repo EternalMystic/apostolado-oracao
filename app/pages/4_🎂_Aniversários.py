@@ -6,6 +6,7 @@ from pathlib import Path
 import streamlit as st
 
 from utils.auth import require_login
+from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -13,6 +14,7 @@ from utils.data_manager import aniversariantes_proximos, ler_membros
 
 st.set_page_config(page_title="Aniversários", page_icon="🎂", layout="wide")
 require_login()
+inject_css()
 st.title("🎂 Aniversários")
 st.caption("Uma ligação no dia do aniversário é apostolado de proximidade.")
 

@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import require_login
+from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -15,6 +16,7 @@ from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
 
 st.set_page_config(page_title="Rota de Visitas", page_icon="🗺️", layout="wide")
 require_login()
+inject_css()
 st.title("🗺️ Rota de Visitas Domiciliares")
 st.caption("Ore um Pai-Nosso antes de cada visita. (São Josemaría Escrivá)")
 

@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import require_login
+from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -14,6 +15,7 @@ from utils.data_manager import ler_agenda, salvar_agenda
 
 st.set_page_config(page_title="Agenda", page_icon="📅", layout="wide")
 require_login()
+inject_css()
 st.title("📅 Agenda Pastoral")
 
 df = ler_agenda()

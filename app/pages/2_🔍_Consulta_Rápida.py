@@ -5,6 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from utils.auth import require_login
+from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -12,6 +13,7 @@ from utils.data_manager import ler_membros
 
 st.set_page_config(page_title="Consulta Rápida", page_icon="🔍", layout="wide")
 require_login()
+inject_css()
 st.title("🔍 Consulta Rápida")
 
 q = st.text_input("Nome, telefone, bairro ou nº", placeholder="Ex.: Helena, Triunfo, 99131")

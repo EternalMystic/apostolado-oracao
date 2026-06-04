@@ -7,12 +7,14 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.auth import require_login
+from utils.ui import inject_css
 from utils.data_manager import BACKUPS_DIR, EXCEL_PATH, ler_config, salvar_config
 from utils.dados_membros import CONFIG_PADRAO
 from utils.inicializar_excel import criar_workbook_inicial
 
 st.set_page_config(page_title="Configurações", page_icon="⚙️", layout="wide")
 require_login()
+inject_css()
 st.title("⚙️ Configurações")
 
 cfg = {**CONFIG_PADRAO, **ler_config()}

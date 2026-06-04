@@ -1,62 +1,43 @@
-# Deploy gratuito – acesso de qualquer lugar
+# Onde publicar? **Streamlit Cloud** (nossa escolha)
 
-O Apostolado pode rodar **de graça** na nuvem com HTTPS (celular, tablet, PC, qualquer país).
+## Por que Streamlit e não Vercel?
 
-## Opção recomendada: Streamlit Community Cloud
+| | **Streamlit Cloud** | **Vercel** |
+|---|---------------------|------------|
+| Para quem tem 50+ | Um link, letras grandes, menu simples | Site bonito, mas exigiria **reescrever tudo** em outra tecnologia |
+| Este projeto | Já pronto | Semanas de trabalho novo |
+| Custo | Grátis | Grátis |
+| Celular | Excelente | Excelente (depois de reescrever) |
 
-Repositório já publicado: **https://github.com/EternalMystic/apostolado-oracao**
+**Conclusão:** Streamlit é o melhor para **facilidade agora** e para o público 50+. Vercel seria melhor só se começássemos do zero em React — não vale a pena para este cadastro.
 
-1. Crie conta em https://share.streamlit.io (login com GitHub).
-2. Clique **Create app** → **Yup, I have an app**.
-3. Preencha:
-   - **Repository:** `EternalMystic/apostolado-oracao`
-   - **Branch:** `main`
-   - **Main file path:** `app/app.py`
-   - **App URL (opcional):** `apostolado-sao-jorge` → fica `https://apostolado-sao-jorge.streamlit.app`
-4. Em **Advanced settings**:
-   - **Python version:** 3.11
-5. Em **Secrets** (Settings do app), cole:
+---
+
+## Publicar em 3 minutos
+
+Repositório: **https://github.com/EternalMystic/apostolado-oracao**
+
+1. Abra **https://share.streamlit.io** → login com GitHub  
+2. **Create app** → repositório `EternalMystic/apostolado-oracao`  
+3. **Main file:** `app/app.py`  
+4. **App URL:** `apostolado-sao-jorge` → link fixo fácil de decorar:  
+   **https://apostolado-sao-jorge.streamlit.app**  
+5. **Secrets** (Settings):
 
 ```toml
-APP_PASSWORD = "senha-que-o-coordenador-escolher"
+APP_PASSWORD = "escolha-uma-senha-forte"
 ```
 
-6. Deploy. URL final: `https://SEU-APP.streamlit.app`
+6. **Deploy**
 
-Compartilhe esse link no WhatsApp do Apostolado.
+## Como os membros entram (50+)
 
-### Dados na nuvem
+1. Coordenador envia **um link** no WhatsApp (o `.streamlit.app`)  
+2. Abre no navegador do celular — **não instala app**  
+3. Digite a **senha** → toque **Entrar no sistema**  
+4. Na tela inicial, toque nos **atalhos grandes** (Buscar membro, Aniversários, etc.)  
+5. Opcional: no navegador, **Adicionar à tela inicial** (ícone como app)
 
-- Alterações ficam no servidor enquanto o app estiver ativo.
-- **Semanalmente:** Configurações → Baixar apostolado.xlsx (backup).
-- Para restaurar: Configurações → Enviar arquivo .xlsx.
+## Backup
 
-## Alternativa: Hugging Face Spaces (também grátis)
-
-1. Conta em https://huggingface.co
-2. New Space → SDK **Streamlit**
-3. Envie os arquivos desta pasta `apostolado_oracao/`
-4. `README.md` do Space:
-
-```yaml
----
-title: Apostolado da Oração
-emoji: ✝️
-colorFrom: purple
-colorTo: purple
-sdk: streamlit
-app_file: app/app.py
-pinned: false
----
-```
-
-5. Secrets: `APP_PASSWORD` na aba Settings do Space.
-
-## Uso local (paróquia)
-
-`INICIAR.bat` — só funciona no computador da igreja.
-
-## Segurança
-
-- Sempre defina `APP_PASSWORD` na nuvem.
-- Não publique a senha na internet; envie só aos coordenadores.
+Configurações → **Baixar apostolado.xlsx** (faça toda semana).

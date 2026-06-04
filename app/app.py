@@ -1,4 +1,4 @@
-"""Apostolado da Oração – painel principal Streamlit."""
+"""Apostolado da Oração – painel principal (otimizado para 50+)."""
 from __future__ import annotations
 
 import sys
@@ -18,6 +18,7 @@ from utils.data_manager import (
     membros_sem_telefone,
     total_por_situacao,
 )
+from utils.ui import atalhos_principais, inject_css, sidebar_ajuda
 
 st.set_page_config(
     page_title="Apostolado da Oração",
@@ -30,46 +31,22 @@ require_login()
 
 cfg = ler_config()
 cor = cfg.get("tema_cor", "#6A1B9A")
+inject_css(cor)
 
+st.sidebar.title("✝️ Apostolado")
+st.sidebar.markdown(f"**{cfg.get('paroquia', 'Paróquia São Jorge')}**")
+st.sidebar.caption(f"{cfg.get('cidade', 'Nova Odessa')} – SP")
+sidebar_ajuda()
+
+st.title("Bem-vindo ao Apostolado da Oração")
 st.markdown(
-    f"""
-<style>
-    .main {{ font-size: 1.05rem; }}
-    [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {cor}22 0%, #f5f0fa 100%);
-    }}
-    h1, h2, h3 {{ color: {cor}; }}
-    div[data-testid="metric-container"] {{
-        background: #fff;
-        border-left: 4px solid {cor};
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }}
-    .stButton>button {{
-        background-color: {cor};
-        color: white;
-    }}
-</style>
-""",
-    unsafe_allow_html=True,
+    f"**{cfg.get('paroquia', 'Paróquia São Jorge')}** · "
+    f"{cfg.get('diocese', 'Diocese de Limeira')} · "
+    f"Hoje: {date.today().strftime('%d/%m/%Y')}"
 )
 
-st.sidebar.title("✝️ Apostolado da Oração")
-st.sidebar.caption(cfg.get("paroquia", "Paróquia São Jorge"))
-st.sidebar.caption(f"{cfg.get('cidade', 'Nova Odessa')} – {cfg.get('estado', 'SP')}")
-st.sidebar.divider()
-st.sidebar.markdown("**Navegação** – use o menu acima")
-st.sidebar.info(
-    "Acesso pela internet: celular, tablet ou PC. "
-    "Dados em `data/apostolado.xlsx` com backup automático."
-)
-
-st.title("🏠 Início – Apostolado da Oração")
-st.caption(
-    f"{cfg.get('paroquia')} · {cfg.get('diocese')} · "
-    f"Atualizado em {date.today().strftime('%d/%m/%Y')}"
-)
+atalhos_principais()
+st.divider()
 
 membros = ler_membros()
 totais = total_por_situacao()
@@ -79,42 +56,30 @@ criticas = len(inconsistencias_criticas_abertas())
 aniv = aniversariantes_proximos(7)
 sem_tel = len(membros_sem_telefone())
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-c1.metric("Total membros", len(membros))
-c2.metric("Ativos", ativos)
-c3.metric("Consagrados", consagrados)
-c4.metric("Inconsist. críticas", criticas)
-c5.metric("Aniv. 7 dias", len(aniv))
-c6.metric("Sem telefone", sem_tel)
+st.subheader("Resumo")
+c1, c2, c3 = st.columns(3)
+c1.metric("Membros ativos", ativos)
+c2.metric("Aniversários esta semana", len(aniv))
+c3.metric("Sem telefone no cadastro", sem_tel)
 
-st.divider()
-col_a, col_b = st.columns(2)
-
-with col_a:
-    st.subheader("📊 Por situação")
-    if totais:
-        st.bar_chart(totais)
-    else:
-        st.write("Nenhum membro cadastrado.")
-
-with col_b:
-    st.subheader("🎂 Próximos aniversários (30 dias)")
-    if aniversariantes_proximos(30):
-        for a in aniversariantes_proximos(30)[:8]:
-            st.write(
-                f"**{a['nome']}** – {a['proximo'].strftime('%d/%m')} "
-                f"({a['dias']} dias) · {a['telefone'] or 'sem tel.'}"
-            )
-    else:
-        st.write("Nenhum aniversário nos próximos 30 dias.")
+if len(aniv) > 0:
+    st.success("Aniversariantes nos próximos 7 dias:")
+    for a in aniv:
+        tel = a.get("telefone") or ""
+        linha = f"**{a['nome']}** — {a['proximo'].strftime('%d/%m')}"
+        if a["dias"] == 0:
+            linha += " — **hoje!**"
+        else:
+            linha += f" — em {a['dias']} dias"
+        if tel and "?" not in tel:
+            num = "".join(c for c in tel if c.isdigit())
+            linha += f' — [WhatsApp](https://wa.me/55{num})'
+        st.markdown(linha)
 
 if criticas:
-    st.warning("⚠️ Inconsistências críticas em aberto – revise a página Inconsistências.")
-    for inc in inconsistencias_criticas_abertas()[:3]:
-        st.write(f"• {inc[2]}")
+    st.warning("Há pendências importantes no cadastro. Abra **Inconsistências** no menu.")
 
 st.divider()
 st.markdown(
-    f'> *"Que o Sagrado Coração de Jesus reine em nossos lares e em nossa comunidade."*'
+    '> *"Que o Sagrado Coração de Jesus reine em nossos lares e em nossa comunidade."*'
 )
-st.caption(cfg.get("comunidades", ""))
