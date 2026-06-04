@@ -4,12 +4,15 @@ O Apostolado pode rodar **de graça** na nuvem com HTTPS (celular, tablet, PC, q
 
 ## Opção recomendada: Streamlit Community Cloud
 
+Repositório já publicado: **https://github.com/EternalMystic/apostolado-oracao**
+
 1. Crie conta em https://share.streamlit.io (login com GitHub).
-2. Este repositório deve estar no GitHub (público ou privado).
-3. Clique **New app** e preencha:
-   - **Repository:** seu-usuario/apostolado-oracao
-   - **Branch:** main
+2. Clique **Create app** → **Yup, I have an app**.
+3. Preencha:
+   - **Repository:** `EternalMystic/apostolado-oracao`
+   - **Branch:** `main`
    - **Main file path:** `app/app.py`
+   - **App URL (opcional):** `apostolado-sao-jorge` → fica `https://apostolado-sao-jorge.streamlit.app`
 4. Em **Advanced settings**:
    - **Python version:** 3.11
 5. Em **Secrets** (Settings do app), cole:
