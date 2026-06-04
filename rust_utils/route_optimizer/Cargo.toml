@@ -1,0 +1,11 @@
+[package]
+name = "route_optimizer"
+version = "0.1.0"
+edition = "2021"
+description = "TSP nearest-neighbor para rota de visitas"
+
+[[bin]]
+name = "route_optimizer"
+path = "src/main.rs"
+
+[dependencies]

@@ -1,0 +1,1 @@
+# Streamlit Cloud: dependências de sistema (vazio = só Python)

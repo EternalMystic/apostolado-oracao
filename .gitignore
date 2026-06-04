@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.env
+.streamlit/secrets.toml
+backups/*.xlsx
+backups/*.zip
+relatorios/*.pdf
+exports/*
+!data/apostolado.xlsx
+rust_utils/**/target/
+.venv/
+venv/
