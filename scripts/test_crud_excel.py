@@ -150,6 +150,25 @@ def test_memorial() -> None:
     _assert(len(dm.ler_memorial()) == n0, "memorial delete")
 
 
+def test_entregas_editor_tipos() -> None:
+    df = pd.DataFrame(
+        [
+            {
+                "id": 1,
+                "membro_id": 2,
+                "membro_nome": "X",
+                "item": "Camisa do Apostolado",
+                "data_entrega": "",
+                "entregue": "N",
+                "observacoes": "bairro",
+            }
+        ]
+    )
+    prep = dm.preparar_entregas_editor(df)
+    _assert(str(prep["data_entrega"].dtype).startswith("datetime"), "data_entrega datetime")
+    _assert(prep["id"].dtype == int, "id int")
+
+
 def test_merge_filtrado() -> None:
     df = pd.DataFrame([{"id": 1, "x": "a"}, {"id": 2, "x": "b"}])
     sub = df[df["id"] == 1].copy()
@@ -162,6 +181,7 @@ def test_merge_filtrado() -> None:
 def main() -> None:
     path = _setup_temp_db()
     print(f"Testando cópia: {path}")
+    test_entregas_editor_tipos()
     test_merge_filtrado()
     test_membros()
     test_inconsistencias()

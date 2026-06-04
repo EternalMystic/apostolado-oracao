@@ -17,6 +17,7 @@ from utils.data_manager import (
     ler_entregas,
     ler_membros,
     preparar_dataframe,
+    preparar_entregas_editor,
     salvar_entregas,
 )
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
@@ -56,12 +57,12 @@ if df_full.empty and membros:
                 "membro_id": m[0],
                 "membro_nome": m[2],
                 "item": ITENS_ENTREGA[0],
-                "data_entrega": "",
+                "data_entrega": pd.NaT,
                 "entregue": "N",
                 "observacoes": m[7] or "",
             }
         )
-    df_full = pd.DataFrame(rows)
+    df_full = preparar_entregas_editor(pd.DataFrame(rows))
     salvar_entregas(df_full)
 
 if st.button("🔄 Gerar rota a partir dos membros ativos"):
@@ -76,12 +77,12 @@ if st.button("🔄 Gerar rota a partir dos membros ativos"):
                 "membro_id": m[0],
                 "membro_nome": m[2],
                 "item": ITENS_ENTREGA[0],
-                "data_entrega": "",
+                "data_entrega": pd.NaT,
                 "entregue": "N",
                 "observacoes": m[7] or "",
             }
         )
-    salvar_entregas(pd.DataFrame(rows))
+    salvar_entregas(preparar_entregas_editor(pd.DataFrame(rows)))
     st.rerun()
 
 bairro_f = st.selectbox(
@@ -89,7 +90,7 @@ bairro_f = st.selectbox(
     ["Todos"] + sorted({m[7] for m in membros.values() if m[7]}),
 )
 filtrado = bairro_f != "Todos"
-df = df_full.copy()
+df = preparar_entregas_editor(df_full.copy())
 if filtrado:
     df = df[
         df.apply(
@@ -106,22 +107,30 @@ st.caption(
     "➕/excluir linhas no editor; depois **Salvar rota**."
 )
 
-edited = st.data_editor(
-    df,
-    num_rows="dynamic",
-    use_container_width=True,
-    column_config={
-        "item": st.column_config.SelectboxColumn(options=ITENS_ENTREGA),
-        "entregue": st.column_config.SelectboxColumn(options=ENTREGUE),
-        "data_entrega": st.column_config.DateColumn("Data"),
-    },
-    height=450,
-)
+if df.empty:
+    st.info("Nenhuma visita na rota. Clique em **Gerar rota** para criar a lista.")
+    edited = df
+else:
+    edited = st.data_editor(
+        df,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "id": st.column_config.NumberColumn("ID", format="%d"),
+            "membro_id": st.column_config.NumberColumn("Membro", format="%d"),
+            "item": st.column_config.SelectboxColumn("Item", options=ITENS_ENTREGA),
+            "entregue": st.column_config.SelectboxColumn("Entregue?", options=ENTREGUE),
+            "data_entrega": st.column_config.DateColumn("Data", format="DD/MM/YYYY"),
+        },
+        height=450,
+        hide_index=True,
+    )
 
-pendentes = len(edited[edited["entregue"].astype(str).str.upper() != "S"])
-st.metric("Visitas pendentes (nesta lista)", pendentes)
+if not df.empty:
+    pendentes = len(edited[edited["entregue"].astype(str).str.upper() != "S"])
+    st.metric("Visitas pendentes (nesta lista)", pendentes)
 
-if st.button("💾 Salvar rota", type="primary"):
+if st.button("💾 Salvar rota", type="primary", disabled=df.empty):
     try:
         merged = mesclar_por_id(df_full, edited, filtrado=filtrado)
         merged = preparar_dataframe(

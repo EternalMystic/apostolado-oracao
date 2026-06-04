@@ -238,8 +238,31 @@ def _salvar_generico(
     _salvar_aba(sheet, df, cols)
 
 
+def preparar_entregas_editor(df: pd.DataFrame) -> pd.DataFrame:
+    """Tipos compatíveis com st.data_editor (DateColumn, SelectboxColumn)."""
+    try:
+        from .dados_membros import ITENS_ENTREGA
+    except ImportError:
+        from dados_membros import ITENS_ENTREGA
+
+    if df.empty:
+        return pd.DataFrame(columns=COL_ENTREGAS)
+    out = df.reindex(columns=COL_ENTREGAS).copy()
+    out["id"] = pd.to_numeric(out["id"], errors="coerce").fillna(0).astype(int)
+    out["membro_id"] = pd.to_numeric(out["membro_id"], errors="coerce").fillna(0).astype(int)
+    out["membro_nome"] = out["membro_nome"].fillna("").astype(str)
+    out["data_entrega"] = pd.to_datetime(out["data_entrega"], errors="coerce")
+    out["item"] = out["item"].fillna("").astype(str).str.strip()
+    invalid_item = ~out["item"].isin(ITENS_ENTREGA) | (out["item"] == "")
+    out.loc[invalid_item, "item"] = ITENS_ENTREGA[0]
+    ent = out["entregue"].fillna("N").astype(str).str.strip().str.upper()
+    out["entregue"] = ent.where(ent.isin(["S", "N"]), "N")
+    out["observacoes"] = out["observacoes"].fillna("").astype(str)
+    return out
+
+
 def ler_entregas() -> pd.DataFrame:
-    return _ler_generico(SHEET_ENTREGAS, COL_ENTREGAS)
+    return preparar_entregas_editor(_ler_generico(SHEET_ENTREGAS, COL_ENTREGAS))
 
 
 def salvar_entregas(df: pd.DataFrame) -> None:
