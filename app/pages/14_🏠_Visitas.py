@@ -100,4 +100,5 @@ tabela_crud(
     id_col="id",
     aplicar_filtro=_filtro,
     altura=450,
+    aba_excel="Visitas",
 )

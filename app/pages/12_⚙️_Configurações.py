@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.auth import require_login
 from utils.ui import inject_css
-from utils.crud_ui import tabela_crud
+from utils.crud_ui import barra_excel_downloads_topo, tabela_crud
 from utils.data_manager import (
     BACKUPS_DIR,
     COL_CONFIG,
@@ -31,6 +31,7 @@ tabela_crud(
     salvar=salvar_config_df,
     id_col=None,
     altura=350,
+    aba_excel="Config",
 )
 
 st.divider()
@@ -66,7 +67,7 @@ st.caption(
 )
 if EXCEL_PATH.exists():
     st.download_button(
-        "⬇️ Baixar apostolado.xlsx agora",
+        "⬇️ BAIXAR EXCEL COMPLETO",
         data=EXCEL_PATH.read_bytes(),
         file_name="apostolado_backup.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

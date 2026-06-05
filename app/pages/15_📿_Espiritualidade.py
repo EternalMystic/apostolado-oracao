@@ -19,6 +19,9 @@ require_login()
 inject_css()
 st.title("📿 Espiritualidade do Apostolado")
 
+st.page_link("pages/22_📖_Orações.py", label="📖 Abrir livro de orações (Rosário, ladainhas…)", use_container_width=True)
+
+st.divider()
 st.markdown("### Oferecimento diário")
 st.markdown(OFERECIMENTO_DIARIO)
 
@@ -38,6 +41,7 @@ tabela_crud(
     },
     id_col="id",
     altura=280,
+    aba_excel="Intencoes_Papa",
 )
 
 st.divider()

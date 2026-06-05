@@ -18,11 +18,19 @@ def _senha_configurada() -> str | None:
     return os.environ.get("APP_PASSWORD", "").strip() or None
 
 
+def _aviso_excel_se_recuperado() -> None:
+    from utils.data_manager import mostrar_aviso_recuperacao_excel
+
+    mostrar_aviso_recuperacao_excel()
+
+
 def require_login() -> None:
     senha = _senha_configurada()
     if not senha:
+        _aviso_excel_se_recuperado()
         return
     if st.session_state.get("auth_ok"):
+        _aviso_excel_se_recuperado()
         return
 
     inject_login_css()

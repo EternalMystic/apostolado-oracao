@@ -56,4 +56,5 @@ tabela_crud(
     id_col=None,
     aplicar_filtro=_filtro,
     altura=450,
+    aba_excel="Inconsistencias",
 )

@@ -95,4 +95,5 @@ tabela_crud(
     id_col="id",
     aplicar_filtro=_filtro,
     altura=500,
+    aba_excel="Membros",
 )

@@ -100,6 +100,9 @@ STATUS_REUNIAO_IA = [
     "Pendente",
     "Transcrevendo",
     "Resumindo",
+    "Resumindo (grátis)",
     "Concluído",
+    "Concluído (grátis)",
+    "Ata manual",
     "Erro",
 ]

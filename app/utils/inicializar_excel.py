@@ -8,37 +8,109 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-from dados_membros import (
-    CONFIG_PADRAO,
-    INCONSISTENCIAS_SEED,
-    ITENS_ENTREGA,
-    MEMBROS_SEED,
-    MEMORIAL,
-    ORDEM_BAIRROS,
-)
-from data_manager import (
-    COL_AGENDA,
-    COL_CONFIG,
-    COL_CONSAGRACOES,
-    COL_ENTREGAS,
-    COL_INCONSISTENCIAS,
-    COL_INTENCOES,
-    COL_MEMBROS,
-    COL_MEMORIAL,
-    COL_VISITAS,
-    DATA_DIR,
-    EXCEL_PATH,
-    ROOT,
-    SHEET_AGENDA,
-    SHEET_CONFIG,
-    SHEET_CONSAGRACOES,
-    SHEET_ENTREGAS,
-    SHEET_INCONSISTENCIAS,
-    SHEET_INTENCOES,
-    SHEET_MEMBROS,
-    SHEET_MEMORIAL,
-    SHEET_VISITAS,
-)
+try:
+    from .dados_membros import (
+        CONFIG_PADRAO,
+        INCONSISTENCIAS_SEED,
+        ITENS_ENTREGA,
+        MEMBROS_SEED,
+        MEMORIAL,
+        ORDEM_BAIRROS,
+    )
+except ImportError:
+    try:
+        from utils.dados_membros import (
+            CONFIG_PADRAO,
+            INCONSISTENCIAS_SEED,
+            ITENS_ENTREGA,
+            MEMBROS_SEED,
+            MEMORIAL,
+            ORDEM_BAIRROS,
+        )
+    except ImportError:
+        from dados_membros import (
+            CONFIG_PADRAO,
+            INCONSISTENCIAS_SEED,
+            ITENS_ENTREGA,
+            MEMBROS_SEED,
+            MEMORIAL,
+            ORDEM_BAIRROS,
+        )
+
+try:
+    from .data_manager import (
+        COL_AGENDA,
+        COL_CONFIG,
+        COL_CONSAGRACOES,
+        COL_ENTREGAS,
+        COL_INCONSISTENCIAS,
+        COL_INTENCOES,
+        COL_MEMBROS,
+        COL_MEMORIAL,
+        COL_VISITAS,
+        DATA_DIR,
+        EXCEL_PATH,
+        ROOT,
+        SHEET_AGENDA,
+        SHEET_CONFIG,
+        SHEET_CONSAGRACOES,
+        SHEET_ENTREGAS,
+        SHEET_INCONSISTENCIAS,
+        SHEET_INTENCOES,
+        SHEET_MEMBROS,
+        SHEET_MEMORIAL,
+        SHEET_VISITAS,
+    )
+except ImportError:
+    try:
+        from utils.data_manager import (
+            COL_AGENDA,
+            COL_CONFIG,
+            COL_CONSAGRACOES,
+            COL_ENTREGAS,
+            COL_INCONSISTENCIAS,
+            COL_INTENCOES,
+            COL_MEMBROS,
+            COL_MEMORIAL,
+            COL_VISITAS,
+            DATA_DIR,
+            EXCEL_PATH,
+            ROOT,
+            SHEET_AGENDA,
+            SHEET_CONFIG,
+            SHEET_CONSAGRACOES,
+            SHEET_ENTREGAS,
+            SHEET_INCONSISTENCIAS,
+            SHEET_INTENCOES,
+            SHEET_MEMBROS,
+            SHEET_MEMORIAL,
+            SHEET_VISITAS,
+        )
+    except ImportError:
+        from data_manager import (
+            COL_AGENDA,
+            COL_CONFIG,
+            COL_CONSAGRACOES,
+            COL_ENTREGAS,
+            COL_INCONSISTENCIAS,
+            COL_INTENCOES,
+            COL_MEMBROS,
+            COL_MEMORIAL,
+            COL_VISITAS,
+            DATA_DIR,
+            EXCEL_PATH,
+            ROOT,
+            SHEET_AGENDA,
+            SHEET_CONFIG,
+            SHEET_CONSAGRACOES,
+            SHEET_ENTREGAS,
+            SHEET_INCONSISTENCIAS,
+            SHEET_INTENCOES,
+            SHEET_MEMBROS,
+            SHEET_MEMORIAL,
+            SHEET_VISITAS,
+        )
+
 try:
     from . import tabelas_apostolado as _ta
 except ImportError:

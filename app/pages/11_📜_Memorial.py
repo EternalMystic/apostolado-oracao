@@ -29,6 +29,7 @@ tabela_crud(
     colunas_data=["nasc", "falecimento"],
     id_col=None,
     altura=400,
+    aba_excel="Memorial",
 )
 
 st.caption("Descansai em paz. R.I.P.")

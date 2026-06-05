@@ -68,4 +68,5 @@ tabela_crud(
     colunas_data=["data"],
     id_col="id",
     altura=380,
+    aba_excel="Sugestoes",
 )

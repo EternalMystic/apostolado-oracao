@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import shutil
+import zipfile
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,10 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT / "data"
 BACKUPS_DIR = ROOT / "backups"
 EXCEL_PATH = DATA_DIR / "apostolado.xlsx"
+
+# Mensagem única após recuperar arquivo corrompido (ex.: nuvem Streamlit)
+ULTIMA_RECUPERACAO: str | None = None
+_recuperando_excel = False
 
 SHEET_MEMBROS = "Membros"
 SHEET_INCONSISTENCIAS = "Inconsistencias"
@@ -159,9 +164,132 @@ def _migrar_planilha_endereco(
     return out.reindex(columns=cols), mudou
 
 
+def _criar_workbook_inicial() -> None:
+    try:
+        from .inicializar_excel import criar_workbook_inicial
+    except ImportError:
+        try:
+            from utils.inicializar_excel import criar_workbook_inicial
+        except ImportError:
+            import sys
+
+            utils_dir = Path(__file__).resolve().parent
+            if str(utils_dir) not in sys.path:
+                sys.path.insert(0, str(utils_dir))
+            from inicializar_excel import criar_workbook_inicial  # noqa: E402
+
+    criar_workbook_inicial()
+
+
+def _path_e_xlsx_valido(path: Path) -> bool:
+    if not path.is_file() or path.stat().st_size < 128:
+        return False
+    try:
+        with zipfile.ZipFile(path) as zf:
+            names = zf.namelist()
+            if not any(n.startswith("xl/") for n in names):
+                return False
+        pd.read_excel(path, sheet_name=0, engine="openpyxl", nrows=1)
+        return True
+    except Exception:
+        return False
+
+
+def _ultimo_backup_valido() -> Path | None:
+    if not BACKUPS_DIR.is_dir():
+        return None
+    candidatos = sorted(BACKUPS_DIR.glob("apostolado_*.xlsx"), reverse=True)
+    for path in candidatos:
+        if "corrupto" in path.name.lower():
+            continue
+        if _path_e_xlsx_valido(path):
+            return path
+    return None
+
+
+def _recuperar_excel_corrompido(erro: Exception | None = None) -> dict[str, pd.DataFrame]:
+    """Restaura backup ou recria workbook quando o .xlsx está ilegível."""
+    global ULTIMA_RECUPERACAO
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    if EXCEL_PATH.exists():
+        dest = BACKUPS_DIR / f"corrupto_{stamp}.xlsx"
+        try:
+            shutil.move(str(EXCEL_PATH), str(dest))
+        except Exception:
+            shutil.copy2(EXCEL_PATH, dest)
+            EXCEL_PATH.unlink(missing_ok=True)
+
+    backup = _ultimo_backup_valido()
+    if backup:
+        shutil.copy2(backup, EXCEL_PATH)
+        ULTIMA_RECUPERACAO = (
+            f"O arquivo Excel estava danificado e foi restaurado do backup "
+            f"({backup.name}). Confira os dados e baixe uma cópia em Configurações."
+        )
+    else:
+        _criar_workbook_inicial()
+        ULTIMA_RECUPERACAO = (
+            "O arquivo Excel estava danificado. Foi criado um arquivo novo. "
+            "Se tiver cópia no computador, envie em Configurações → Enviar Excel."
+        )
+
+    if erro:
+        ULTIMA_RECUPERACAO += f" (detalhe técnico: {type(erro).__name__})"
+
+    return pd.read_excel(EXCEL_PATH, sheet_name=None, engine="openpyxl")
+
+
+def _ler_todas_abas() -> dict[str, pd.DataFrame]:
+    global _recuperando_excel
+    try:
+        return pd.read_excel(EXCEL_PATH, sheet_name=None, engine="openpyxl")
+    except Exception as e:
+        if _recuperando_excel:
+            raise
+        _recuperando_excel = True
+        try:
+            return _recuperar_excel_corrompido(e)
+        finally:
+            _recuperando_excel = False
+
+
+def _escrever_todas_abas(todas: dict[str, pd.DataFrame]) -> None:
+    """Grava em arquivo temporário e substitui — evita .xlsx corrompido pela metade."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = EXCEL_PATH.with_name(f"{EXCEL_PATH.stem}._tmp.xlsx")
+    try:
+        with pd.ExcelWriter(tmp, engine="openpyxl") as writer:
+            for nome, sdf in todas.items():
+                sdf.to_excel(writer, sheet_name=str(nome)[:31], index=False)
+        tmp.replace(EXCEL_PATH)
+    except Exception:
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
+        raise
+
+
+def mostrar_aviso_recuperacao_excel() -> None:
+    """Exibe aviso uma vez por sessão se o Excel foi recuperado automaticamente."""
+    global ULTIMA_RECUPERACAO
+    if not ULTIMA_RECUPERACAO:
+        return
+    try:
+        import streamlit as st
+    except ImportError:
+        return
+    if st.session_state.get("_aviso_recuperacao_excel") == ULTIMA_RECUPERACAO:
+        return
+    st.warning(ULTIMA_RECUPERACAO)
+    st.session_state["_aviso_recuperacao_excel"] = ULTIMA_RECUPERACAO
+
+
 def _migrar_excel() -> None:
     """Adiciona abas e colunas novas sem apagar dados existentes."""
-    todas = pd.read_excel(EXCEL_PATH, sheet_name=None, engine="openpyxl")
+    todas = _ler_todas_abas()
     mudou = False
 
     novas_abas = {
@@ -242,18 +370,22 @@ def _migrar_excel() -> None:
 
     if mudou:
         _backup_antes_de_escrever()
-        with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl") as writer:
-            for nome, sdf in todas.items():
-                sdf.to_excel(writer, sheet_name=nome, index=False)
+        _escrever_todas_abas(todas)
 
 
 def _ensure_excel() -> None:
     if not EXCEL_PATH.exists():
-        from inicializar_excel import criar_workbook_inicial
-
-        criar_workbook_inicial()
-    else:
-        _migrar_excel()
+        _criar_workbook_inicial()
+        return
+    if not _path_e_xlsx_valido(EXCEL_PATH):
+        global _recuperando_excel
+        if not _recuperando_excel:
+            _recuperando_excel = True
+            try:
+                _recuperar_excel_corrompido(ValueError("arquivo Excel inválido"))
+            finally:
+                _recuperando_excel = False
+    _migrar_excel()
 
 
 def _backup_antes_de_escrever() -> Path | None:
@@ -291,11 +423,9 @@ def _salvar_aba(sheet: str, df: pd.DataFrame, cols: list[str]) -> None:
     _ensure_excel()
     _backup_antes_de_escrever()
     out = df.reindex(columns=cols).copy()
-    todas = pd.read_excel(EXCEL_PATH, sheet_name=None, engine="openpyxl")
+    todas = _ler_todas_abas()
     todas[sheet] = out
-    with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl") as writer:
-        for nome, sdf in todas.items():
-            sdf.to_excel(writer, sheet_name=nome, index=False)
+    _escrever_todas_abas(todas)
 
 
 def _membro_dict(row: pd.Series) -> dict[str, Any]:
@@ -334,6 +464,106 @@ def _normalizar_datas_df(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
             continue
         out[c] = pd.to_datetime(out[c], errors="coerce")
     return out
+
+
+COLUNAS_INTEIRAS = frozenset(
+    {
+        "id",
+        "membro_id",
+        "_rid",
+        "num_orig",
+        "pagina",
+        "duracao_min",
+        "mes",
+        "ano",
+        "ata_num",
+    }
+)
+
+
+def _celula_str(v: Any) -> str:
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return ""
+    s = str(v).strip()
+    return "" if s.lower() in ("nan", "none", "nat") else s
+
+
+def _eh_tipo_coluna(cfg: Any, nome: str) -> bool:
+    return type(cfg).__name__ == nome
+
+
+def preparar_data_editor(
+    df: pd.DataFrame,
+    cols: list[str],
+    *,
+    colunas_data: list[str] | None = None,
+    id_col: str | None = "id",
+    column_config: dict[str, Any] | None = None,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Tipos e opções compatíveis com st.data_editor (evita erro em quase todas as telas)."""
+    import streamlit as st
+
+    cfg_out = dict(column_config or {})
+    if df.empty:
+        return pd.DataFrame(columns=cols), cfg_out
+
+    out = df.reindex(columns=cols).copy()
+    colunas_data = list(colunas_data or [])
+
+    for c, col_cfg in cfg_out.items():
+        if c in cols and _eh_tipo_coluna(col_cfg, "DateColumn") and c not in colunas_data:
+            colunas_data.append(c)
+
+    ints = set(COLUNAS_INTEIRAS) & set(cols)
+    if id_col and id_col in cols:
+        ints.add(id_col)
+
+    for c in cols:
+        col_cfg = cfg_out.get(c)
+        if col_cfg and _eh_tipo_coluna(col_cfg, "NumberColumn"):
+            nums = pd.to_numeric(out[c], errors="coerce").fillna(0)
+            out[c] = nums.astype(int)
+            ints.add(c)
+            continue
+        if c in ints:
+            nums = pd.to_numeric(out[c], errors="coerce").fillna(0)
+            out[c] = nums.astype(int)
+
+    for c in colunas_data:
+        if c in out.columns:
+            out[c] = pd.to_datetime(out[c], errors="coerce")
+
+    for c in cols:
+        col_cfg = cfg_out.get(c)
+        if col_cfg and _eh_tipo_coluna(col_cfg, "SelectboxColumn"):
+            opts = [str(o) for o in (getattr(col_cfg, "options", None) or [])]
+            for v in out[c].tolist():
+                s = _celula_str(v)
+                if s and s not in opts:
+                    opts.append(s)
+            if not opts:
+                opts = [""]
+
+            def _norm_select(val: Any) -> str:
+                s = _celula_str(val)
+                if s in opts:
+                    return s
+                for o in opts:
+                    if o.lower() == s.lower():
+                        return o
+                return opts[0]
+
+            out[c] = out[c].apply(_norm_select)
+            label = getattr(col_cfg, "label", None) or c.replace("_", " ").title()
+            cfg_out[c] = st.column_config.SelectboxColumn(label, options=opts)
+            continue
+
+        if c in ints or c in colunas_data:
+            continue
+
+        out[c] = out[c].apply(_celula_str)
+
+    return out, cfg_out
 
 
 def ler_membros() -> list[dict[str, Any]]:
@@ -472,7 +702,10 @@ def preparar_entregas_editor(df: pd.DataFrame) -> pd.DataFrame:
     try:
         from .dados_membros import ITENS_ENTREGA
     except ImportError:
-        from dados_membros import ITENS_ENTREGA
+        try:
+            from utils.dados_membros import ITENS_ENTREGA
+        except ImportError:
+            from dados_membros import ITENS_ENTREGA
 
     if df.empty:
         return pd.DataFrame(columns=COL_ENTREGAS)
@@ -638,9 +871,36 @@ def contar_zeladores_ativos() -> int:
 
 
 def listar_comunidades() -> list[str]:
+    vistos: set[str] = set()
+    ordem: list[str] = []
+
+    def add_many(vals: list[str]) -> None:
+        for c in vals:
+            t = str(c).strip()
+            if t and t not in vistos:
+                vistos.add(t)
+                ordem.append(t)
+
     cfg = ler_config()
     raw = cfg.get("comunidades", "")
-    return [c.strip() for c in raw.replace("·", "|").split("|") if c.strip()]
+    add_many([x.strip() for x in raw.replace("·", "|").split("|") if x.strip()])
+    add_many(["Matriz", "Paróquia São Jorge"])
+
+    try:
+        dfm = ler_membros_df()
+        if not dfm.empty and "comunidade" in dfm.columns:
+            add_many(dfm["comunidade"].dropna().astype(str).tolist())
+    except Exception:
+        pass
+
+    try:
+        dfc = ler_centros()
+        if not dfc.empty and "comunidade" in dfc.columns:
+            add_many(dfc["comunidade"].dropna().astype(str).tolist())
+    except Exception:
+        pass
+
+    return ordem or ["Matriz"]
 
 
 def ler_consagracoes() -> pd.DataFrame:
@@ -685,12 +945,21 @@ def salvar_agenda(df: pd.DataFrame) -> None:
     )
 
 
+def _import_config_padrao():
+    try:
+        from .dados_membros import CONFIG_PADRAO
+    except ImportError:
+        try:
+            from utils.dados_membros import CONFIG_PADRAO
+        except ImportError:
+            from dados_membros import CONFIG_PADRAO
+    return CONFIG_PADRAO
+
+
 def ler_config() -> dict[str, str]:
     df = _ler_aba(SHEET_CONFIG)
     if df.empty:
-        from dados_membros import CONFIG_PADRAO
-
-        return dict(CONFIG_PADRAO)
+        return dict(_import_config_padrao())
     return {str(r["chave"]): str(r["valor"]) for _, r in df.iterrows()}
 
 
@@ -704,10 +973,9 @@ def salvar_config(cfg: dict[str, str]) -> None:
 def ler_config_df() -> pd.DataFrame:
     df = _ler_generico(SHEET_CONFIG, COL_CONFIG)
     if df.empty:
-        from dados_membros import CONFIG_PADRAO
-
+        cfg = _import_config_padrao()
         return pd.DataFrame(
-            [{"chave": k, "valor": str(v)} for k, v in CONFIG_PADRAO.items()],
+            [{"chave": k, "valor": str(v)} for k, v in cfg.items()],
             columns=COL_CONFIG,
         )
     return df

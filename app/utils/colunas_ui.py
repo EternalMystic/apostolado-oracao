@@ -91,6 +91,21 @@ def coluna_texto(coluna: str, **kwargs: Any) -> Any:
     return st.column_config.TextColumn(titulo(coluna), **kwargs)
 
 
+_COLUNAS_NUMERO = frozenset(
+    {
+        "id",
+        "membro_id",
+        "_rid",
+        "num_orig",
+        "pagina",
+        "duracao_min",
+        "mes",
+        "ano",
+        "ata_num",
+    }
+)
+
+
 def montar_column_config(
     colunas: list[str],
     extra: dict[str, Any] | None = None,
@@ -105,6 +120,8 @@ def montar_column_config(
             continue
         if extra and c in extra:
             cfg[c] = extra[c]
+        elif c in _COLUNAS_NUMERO:
+            cfg[c] = st.column_config.NumberColumn(titulo(c), format="%d", min_value=0)
         else:
             cfg[c] = coluna_texto(c)
     if extra:

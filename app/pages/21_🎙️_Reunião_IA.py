@@ -1,10 +1,11 @@
-"""Gravação/upload de áudio da reunião semanal + transcrição e resumo com IA."""
+"""Reunião semanal: modo grátis (ditado) ou IA (áudio longo)."""
 import sys
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -23,6 +24,7 @@ from utils.crud_ui import proximo_id, tabela_crud
 from utils.data_manager import ROOT, ler_config, ler_reunioes_ia, salvar_reunioes_ia
 from utils.opcoes import STATUS_REUNIAO_IA
 from utils.tabelas_apostolado import COL_REUNIOES_IA
+from utils.reuniao_gratis import html_dictado_voz, resumo_sem_ia
 from utils.ui import inject_css
 
 st.set_page_config(
@@ -33,20 +35,24 @@ st.set_page_config(
 )
 require_login()
 inject_css()
-st.title("🎙️ Reunião semanal — áudio e resumo com IA")
+st.title("🎙️ Reunião semanal")
 
 cfg = ler_config()
 ok_ia, modo_ia = ia_disponivel(cfg)
 if ok_ia:
-    st.success(f"IA configurada: {modo_ia}")
+    st.markdown(f"IA disponível ({modo_ia}). Aba **Grátis** não precisa de chave.")
 else:
-    st.warning(
-        "Configure as chaves de API nos **Secrets** do Streamlit Cloud "
-        "(veja aba «Como configurar» abaixo)."
-    )
+    st.markdown("Use a aba **🆓 Grátis** — ditado no Chrome e resumo automático, sem pagar API.")
 
-tab_audio, tab_texto, tab_gravar, tab_hist, tab_ajuda = st.tabs(
-    ["📤 Enviar áudio", "📝 Colar transcrição", "🔴 Gravar no celular", "📚 Histórico", "⚙️ Configurar IA"]
+tab_gratis, tab_audio, tab_texto, tab_gravar, tab_hist, tab_ajuda = st.tabs(
+    [
+        "🆓 Grátis (sem IA)",
+        "📤 Áudio com IA",
+        "📝 Texto com IA",
+        "🔴 Gravar curto",
+        "📚 Histórico",
+        "⚙️ Configurar IA",
+    ]
 )
 
 
@@ -62,6 +68,29 @@ def _registrar_linha(**campos) -> int:
     return rid
 
 
+def _salvar_resultado_gratis(
+    rid: int,
+    resultado: dict[str, str],
+    *,
+    titulo: str,
+    data_reu: date,
+    dur: int = 0,
+) -> None:
+    rel_txt = salvar_transcricao(rid, resultado["transcricao"])
+    _atualizar_linha(
+        rid,
+        titulo=titulo,
+        data=data_reu,
+        duracao_min=dur,
+        status="Concluído (grátis)",
+        transcricao_arquivo=rel_txt,
+        resumo=truncar_excel(resultado["resumo"]),
+        explicacao=truncar_excel(resultado["explicacao"]),
+        pontos_chave=truncar_excel(resultado["pontos_chave"]),
+        observacoes="Resumo automático sem IA — revise antes de publicar.",
+    )
+
+
 def _atualizar_linha(rid: int, **campos) -> None:
     df = ler_reunioes_ia()
     if df.empty or "id" not in df.columns:
@@ -73,6 +102,61 @@ def _atualizar_linha(rid: int, **campos) -> None:
         df.loc[mask, k] = v
     salvar_reunioes_ia(df)
 
+
+with tab_gratis:
+    st.markdown(
+        "### Ditado por voz (grátis)"
+    )
+    st.markdown(
+        "No **Chrome** do celular: toque *Iniciar ditado*, fale, *Copiar texto* e cole na caixa verde."
+    )
+    components.html(html_dictado_voz(), height=420, scrolling=True)
+    titulo_g = st.text_input("Título", "Reunião semanal", key="tit_gratis")
+    data_g = st.date_input("Data", value=date.today(), key="data_gratis")
+    texto_g = st.text_area(
+        "Texto da reunião (cole o ditado ou digite)",
+        height=220,
+        key="texto_gratis",
+        placeholder="Cole aqui o que foi ditado ou digitado…",
+    )
+    if st.button("✅ Gerar resumo grátis e salvar", type="primary", use_container_width=True):
+        if not texto_g.strip():
+            st.error("Escreva ou cole o texto da reunião.")
+        else:
+            rid = _registrar_linha(
+                data=data_g,
+                titulo=titulo_g,
+                status="Resumindo (grátis)",
+            )
+            resultado = resumo_sem_ia(texto_g)
+            _salvar_resultado_gratis(rid, resultado, titulo=titulo_g, data_reu=data_g)
+            st.success("Salvo no histórico. Revise o resumo e copie para Atas se quiser.")
+            st.markdown("### Resumo")
+            st.write(resultado["resumo"])
+            st.markdown("### Pontos importantes")
+            st.write(resultado["pontos_chave"])
+
+    st.divider()
+    st.markdown("### Ata rápida (sem ditado)")
+    presentes = st.text_input("Quem esteve presente", key="ata_presentes")
+    deliberacoes = st.text_area("O que foi decidido", height=120, key="ata_delib")
+    tarefas = st.text_area("Próximos passos / tarefas", height=100, key="ata_tarefas")
+    if st.button("Salvar ata simples", use_container_width=True):
+        partes = []
+        if presentes.strip():
+            partes.append(f"Presentes: {presentes.strip()}")
+        if deliberacoes.strip():
+            partes.append(f"Deliberações: {deliberacoes.strip()}")
+        if tarefas.strip():
+            partes.append(f"Tarefas: {tarefas.strip()}")
+        if not partes:
+            st.error("Preencha pelo menos um campo.")
+        else:
+            texto_ata = "\n\n".join(partes)
+            rid = _registrar_linha(data=date.today(), titulo=titulo_g, status="Ata manual")
+            resultado = resumo_sem_ia(texto_ata)
+            _salvar_resultado_gratis(rid, resultado, titulo=titulo_g, data_reu=date.today())
+            st.success("Ata salva.")
 
 with tab_audio:
     st.markdown(
@@ -133,11 +217,23 @@ with tab_audio:
                 st.error(f"Erro: {e}")
 
 with tab_texto:
-    st.caption("Se já tiver transcrição (ou se o áudio for muito grande), cole o texto e peça só o resumo.")
     titulo2 = st.text_input("Título", "Reunião semanal", key="tit_txt")
     data2 = st.date_input("Data", value=date.today(), key="data_txt")
     texto_livre = st.text_area("Transcrição", height=280, placeholder="Cole aqui o texto da reunião…")
-    if st.button("Gerar resumo a partir do texto", type="primary", disabled=not ok_ia):
+    c_ia, c_gr = st.columns(2)
+    with c_gr:
+        if st.button("Resumo grátis (sem IA)", use_container_width=True):
+            if not texto_livre.strip():
+                st.error("Cole a transcrição.")
+            else:
+                rid = _registrar_linha(data=data2, titulo=titulo2, status="Resumindo (grátis)")
+                resultado = resumo_sem_ia(texto_livre)
+                _salvar_resultado_gratis(rid, resultado, titulo=titulo2, data_reu=data2)
+                st.success("Salvo.")
+                st.write(resultado["resumo"])
+    with c_ia:
+        usar_ia = st.button("Resumo com IA", type="primary", disabled=not ok_ia, use_container_width=True)
+    if usar_ia:
         if not texto_livre.strip():
             st.error("Cole a transcrição.")
         else:
@@ -249,6 +345,7 @@ with tab_hist:
         colunas_data=["data"],
         id_col="id",
         altura=260,
+        aba_excel="Reunioes_IA",
     )
 
 with tab_ajuda:

@@ -36,6 +36,7 @@ with tab1:
         colunas_data=["mandato_inicio"],
         id_col="id",
         altura=320,
+        aba_excel="Diretoria",
     )
 
 with tab2:
@@ -57,6 +58,7 @@ with tab2:
         colunas_data=["data_posse"],
         id_col="id",
         altura=320,
+        aba_excel="Zeladores",
     )
     if membros:
         st.markdown("**Membros ativos (referência de ID):**")

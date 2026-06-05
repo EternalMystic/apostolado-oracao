@@ -23,6 +23,7 @@ st.markdown(
 | Cadastro | Membros | Associados, zeladores, comunidade, fita |
 | Busca | Consulta Rápida | Achar membro no celular |
 | Espiritualidade | Espiritualidade | Oferecimento + intenções do Papa |
+| Orações | Orações | Rosário tomista, ladainhas, rezas |
 | Pastoral | Rota / Visitas / Entregas | Visitas domiciliares e materiais |
 | Oração | Mural de oração | Pedidos da comunidade |
 | Organização | Diretoria / Centros / Atas | Estrutura do AO na paróquia |

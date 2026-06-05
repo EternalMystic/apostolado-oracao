@@ -33,4 +33,5 @@ tabela_crud(
     colunas_data=["data_consagracao"],
     id_col="id",
     altura=400,
+    aba_excel="Consagracoes",
 )

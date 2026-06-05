@@ -1,4 +1,4 @@
-"""Rota de visitas — endereço completo e filtros por CEP, bairro, rua e cidade."""
+"""Rota de visitas — ordem pelo mapa e lista fácil no celular."""
 import sys
 from pathlib import Path
 
@@ -6,33 +6,36 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import require_login
-from utils.ui import inject_css
+from utils.ui import botao_grande, cartao_visita, inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from utils.colunas_ui import montar_column_config
-from utils.crud_ui import mesclar_por_id
-from utils.data_manager import (
-    COL_ENTREGAS,
-    ler_entregas,
-    ler_membros,
-    preparar_dataframe,
-    preparar_entregas_editor,
-    salvar_entregas,
-)
+from utils.crud_ui import barra_excel_downloads_topo, barra_excel_pagina_custom, mesclar_por_id
+from utils.data_manager import COL_ENTREGAS, ler_config, ler_entregas, ler_membros, preparar_data_editor, preparar_dataframe, preparar_entregas_editor, salvar_entregas
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
 from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro
+from utils.mapa_rotas import (
+    ENDERECO_PAROQUIA_PADRAO,
+    ordenar_por_proximidade,
+    resumo_distancias,
+    url_apple_maps,
+    url_google_maps,
+    url_rota_google,
+    url_waze,
+)
 from utils.opcoes import ENTREGUE
 
 st.set_page_config(
     page_title="Rota de Visitas",
     page_icon="🗺️",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="collapsed",
 )
 require_login()
 inject_css()
 st.title("🗺️ Rota de Visitas")
+barra_excel_downloads_topo("rota", "Entregas")
 
 
 def ordem_bairro(b: str) -> int:
@@ -74,29 +77,57 @@ membros_ativos = [
 ]
 membros = {m["id"]: m for m in membros_ativos}
 df_full = ler_entregas()
+cfg = ler_config()
+partida = cfg.get("endereco_paroquia") or ENDERECO_PAROQUIA_PADRAO
 
 if df_full.empty and membros:
     rows = [_linha_rota(m, i) for i, m in enumerate(sorted(membros.values(), key=_chave_ordenacao), 1)]
     df_full = preparar_entregas_editor(pd.DataFrame(rows))
     salvar_entregas(df_full)
 
-if st.button("🔄 Gerar rota a partir dos membros ativos"):
-    rows = [_linha_rota(m, i) for i, m in enumerate(sorted(membros.values(), key=_chave_ordenacao), 1)]
-    salvar_entregas(preparar_entregas_editor(pd.DataFrame(rows)))
-    st.rerun()
+a1, a2 = st.columns(2)
+with a1:
+    if botao_grande("🔄 Montar lista dos ativos", "rota_gerar"):
+        rows = [_linha_rota(m, i) for i, m in enumerate(sorted(membros.values(), key=_chave_ordenacao), 1)]
+        salvar_entregas(preparar_entregas_editor(pd.DataFrame(rows)))
+        st.rerun()
+with a2:
+    if botao_grande("📍 Ordenar pelo mapa", "rota_mapa", type_btn="primary"):
+        with st.spinner("Consultando mapa…"):
+            linhas = df_full.to_dict("records")
+            ordenadas, avisos = ordenar_por_proximidade(
+                linhas, ponto_partida=partida, apenas_pendentes=False
+            )
+            novo = preparar_entregas_editor(pd.DataFrame(ordenadas))
+            salvar_entregas(
+                preparar_dataframe(
+                    novo,
+                    COL_ENTREGAS,
+                    id_col="id",
+                    colunas_data=["data_entrega"],
+                )
+            )
+        if avisos:
+            for msg in avisos[:8]:
+                st.warning(msg)
+        st.success("Ordem atualizada: da paróquia para o mais perto.")
+        st.rerun()
 
-st.subheader("Filtrar endereço")
-f1, f2, f3, f4 = st.columns(4)
-with f1:
-    filtro_cep = st.text_input("CEP", key="rota_f_cep", placeholder="Ex.: 13380")
-with f2:
-    bairros = sorted({str(m.get("bairro", "")).strip() for m in membros_ativos if m.get("bairro")})
-    filtro_bairro = st.selectbox("Bairro", ["Todos"] + bairros, key="rota_f_bairro")
-with f3:
-    filtro_rua = st.text_input("Rua", key="rota_f_rua", placeholder="Parte do nome da rua")
-with f4:
-    cidades = sorted({str(m.get("cidade", "")).strip() for m in membros_ativos if m.get("cidade")})
-    filtro_cidade = st.selectbox("Cidade", ["Todos"] + cidades, key="rota_f_cidade")
+pendentes_total = 0
+if not df_full.empty:
+    pendentes_total = int((df_full["entregue"].astype(str).str.upper() != "S").sum())
+st.metric("Visitas ainda não feitas", pendentes_total)
+
+with st.expander("Filtrar por endereço", expanded=False):
+    f1, f2 = st.columns(2)
+    with f1:
+        filtro_cep = st.text_input("CEP", key="rota_f_cep", placeholder="13380")
+        bairros = sorted({str(m.get("bairro", "")).strip() for m in membros_ativos if m.get("bairro")})
+        filtro_bairro = st.selectbox("Bairro", ["Todos"] + bairros, key="rota_f_bairro")
+    with f2:
+        filtro_rua = st.text_input("Rua", key="rota_f_rua")
+        cidades = sorted({str(m.get("cidade", "")).strip() for m in membros_ativos if m.get("cidade")})
+        filtro_cidade = st.selectbox("Cidade", ["Todos"] + cidades, key="rota_f_cidade")
 
 filtrado = any(
     [
@@ -132,22 +163,49 @@ if filtrado:
         )
 
     df = df[df.apply(_linha_passa, axis=1)]
-    st.warning("Filtro ativo: ao salvar, só altera linhas visíveis.")
-
-st.caption(
-    "Colunas de endereço: CEP, rua, número, bairro e cidade. "
-    "Campo **Observações** é só para notas da visita (não use para endereço)."
-)
+    if filtrado:
+        st.warning("Filtro ligado: ao salvar, só muda o que aparece aqui.")
 
 if df.empty:
-    st.info("Nenhuma visita na rota. Clique em **Gerar rota** para criar a lista.")
-    edited = df
+    st.markdown("### Nenhuma visita na lista")
+    st.markdown("Toque em **Montar lista dos ativos** para começar.")
 else:
-    edited = st.data_editor(
-        df,
-        num_rows="dynamic",
-        use_container_width=True,
-        column_config=montar_column_config(
+    ver = st.radio(
+        "Como ver",
+        ["Lista para sair de casa", "Tabela para editar"],
+        horizontal=True,
+        key="rota_modo",
+    )
+
+    if ver == "Lista para sair de casa":
+        pendentes = df[df["entregue"].astype(str).str.upper() != "S"]
+        lista = pendentes.to_dict("records") if not pendentes.empty else df.to_dict("records")
+        resumo = resumo_distancias(lista)
+
+        if len(lista) >= 2:
+            st.link_button(
+                "🚗 Abrir rota no Google Maps",
+                url_rota_google(lista),
+                use_container_width=True,
+            )
+
+        st.markdown("### Próximas visitas")
+        for item in resumo:
+            km = item.get("km_anterior")
+            km_txt = str(km) if km is not None else None
+            cartao_visita(item["ordem"], item["nome"], item["endereco"], km_txt)
+            m1, m2, m3 = st.columns(3)
+            row = item["row"]
+            with m1:
+                st.link_button("Google", url_google_maps(row), use_container_width=True)
+            with m2:
+                st.link_button("Apple", url_apple_maps(row), use_container_width=True)
+            with m3:
+                st.link_button("Waze", url_waze(row), use_container_width=True)
+            st.divider()
+
+    else:
+        cfg_rota = montar_column_config(
             list(df.columns),
             {
                 "id": st.column_config.NumberColumn("ID", format="%d"),
@@ -156,26 +214,41 @@ else:
                 "entregue": st.column_config.SelectboxColumn("Entregue?", options=ENTREGUE),
                 "data_entrega": st.column_config.DateColumn("Data da entrega", format="DD/MM/YYYY"),
             },
-        ),
-        height=450,
-        hide_index=True,
-    )
-
-if not df.empty:
-    pendentes = len(edited[edited["entregue"].astype(str).str.upper() != "S"])
-    st.metric("Visitas pendentes (nesta lista)", pendentes)
-
-if st.button("💾 Salvar rota", type="primary", disabled=df.empty):
-    try:
-        merged = mesclar_por_id(df_full, edited, filtrado=filtrado)
-        merged = preparar_dataframe(
-            merged,
-            COL_ENTREGAS,
-            id_col="id",
-            colunas_data=["data_entrega"],
         )
-        salvar_entregas(merged)
-        st.success("Rota salva no apostolado.xlsx.")
-        st.rerun()
-    except Exception as e:
-        st.error(f"Erro ao salvar: {e}")
+        df_edit, cfg_edit = preparar_data_editor(
+            df,
+            list(df.columns),
+            colunas_data=["data_entrega"],
+            id_col="id",
+            column_config=cfg_rota,
+        )
+        edited = st.data_editor(
+            df_edit,
+            num_rows="dynamic",
+            use_container_width=True,
+            column_config=cfg_edit,
+            height=400,
+            hide_index=True,
+        )
+
+        merged = mesclar_por_id(df_full, edited, filtrado=filtrado)
+
+        def _salvar_rota(df: pd.DataFrame) -> None:
+            salvar_entregas(
+                preparar_dataframe(
+                    df,
+                    COL_ENTREGAS,
+                    id_col="id",
+                    colunas_data=["data_entrega"],
+                )
+            )
+
+        barra_excel_pagina_custom(
+            chave="rota_edit",
+            nome_aba="Entregas",
+            df_atual=merged,
+            colunas=COL_ENTREGAS,
+            colunas_data=["data_entrega"],
+            id_col="id",
+            ao_salvar=_salvar_rota,
+        )

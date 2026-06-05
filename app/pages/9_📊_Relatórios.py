@@ -67,7 +67,7 @@ if st.button("📥 Lista de membros CSV"):
 
 if EXCEL_PATH.exists():
     st.download_button(
-        "⬇️ Baixar Excel completo",
+        "⬇️ BAIXAR EXCEL COMPLETO",
         data=EXCEL_PATH.read_bytes(),
         file_name=f"apostolado_{datetime.now():%Y%m%d}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

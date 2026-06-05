@@ -27,7 +27,6 @@ q = st.text_input(
     placeholder="Nome, telefone, CEP, rua, bairro ou cidade",
 )
 if not q:
-    st.info("Digite acima para buscar.")
     st.stop()
 
 q_lower = q.lower()

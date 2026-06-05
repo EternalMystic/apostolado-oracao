@@ -9,6 +9,7 @@ from utils.ui import inject_css
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from utils.colunas_ui import montar_column_config
 from utils.crud_ui import tabela_crud
 from utils.data_manager import ler_centros, ler_membros_df, listar_comunidades, salvar_centros
 from utils.opcoes import ATIVO_SN
@@ -26,14 +27,19 @@ tabela_crud(
     colunas=COL_CENTROS,
     carregar=ler_centros,
     salvar=salvar_centros,
-    column_config={
-        "comunidade": st.column_config.SelectboxColumn(
-            options=listar_comunidades() or ["Matriz"]
-        ),
-        "ativo": st.column_config.SelectboxColumn(options=ATIVO_SN),
-    },
+    column_config=montar_column_config(
+        COL_CENTROS,
+        {
+            "comunidade": st.column_config.SelectboxColumn(
+                "Comunidade",
+                options=listar_comunidades() or ["Matriz"],
+            ),
+            "ativo": st.column_config.SelectboxColumn("Ativo?", options=ATIVO_SN),
+        },
+    ),
     id_col="id",
     altura=350,
+    aba_excel="Centros",
 )
 
 st.divider()

@@ -31,6 +31,7 @@ tabela_crud(
     colunas_data=["data"],
     id_col="id",
     altura=300,
+    aba_excel="Comunicacoes",
 )
 
 st.divider()

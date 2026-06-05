@@ -20,13 +20,7 @@ from utils.data_manager import (
     membros_sem_telefone,
     total_por_situacao,
 )
-from utils.ui import (
-    atalhos_principais,
-    dica_app_celular,
-    inject_css,
-    rodape,
-    sidebar_minima,
-)
+from utils.ui import atalhos_principais, inject_css, rodape, sidebar_minima
 
 st.set_page_config(
     page_title="Apostolado da Oração",
@@ -45,8 +39,6 @@ sidebar_minima(
     cfg.get("paroquia", "Paróquia São Jorge"),
     f"{cfg.get('cidade', 'Nova Odessa')} – SP",
 )
-
-dica_app_celular()
 
 st.title("Início")
 st.markdown(f"**{date.today().strftime('%d/%m/%Y')}**")
@@ -69,7 +61,9 @@ c4.metric("Centros", len(ler_centros()))
 papa = ler_intencoes_papa()
 if not papa.empty:
     ult = papa.sort_values(["ano", "mes"], ascending=False).iloc[0]
-    st.info(f"Intenção do Papa ({int(ult['mes'])}/{int(ult['ano'])}): {ult.get('titulo', '')}")
+    st.markdown(
+        f"**Oração do Papa** ({int(ult['mes'])}/{int(ult['ano'])}): {ult.get('titulo', '')}"
+    )
 
 if aniv:
     st.markdown("#### Próximos aniversários")
