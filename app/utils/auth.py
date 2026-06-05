@@ -44,7 +44,12 @@ def require_login() -> None:
         unsafe_allow_html=True,
     )
 
-    entrada = st.text_input("Senha", type="password", placeholder="Digite a senha")
+    entrada = st.text_input(
+        "Senha",
+        type="password",
+        placeholder="Digite a senha",
+        label_visibility="collapsed",
+    )
     if st.button("ENTRAR", type="primary", use_container_width=True):
         if entrada == senha:
             st.session_state.auth_ok = True

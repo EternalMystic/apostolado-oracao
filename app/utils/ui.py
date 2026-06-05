@@ -265,26 +265,89 @@ def inject_css(cor: str = COR_PADRAO) -> None:
 
 
 def inject_login_css(cor: str = COR_PADRAO) -> None:
-    inject_css(cor)
+    """Tela de login — fundo roxo contínuo, sem cartão branco."""
+    ativar_modo_facil()
+    inject_pwa_meta(cor)
     st.markdown(
         f"""
 <style>
+    .stApp {{
+        background: linear-gradient(165deg, {COR_ROXO_ESCURO} 0%, {cor} 50%, #5E35B1 100%) !important;
+    }}
+    [data-testid="stSidebar"], [data-testid="stSidebarNav"] {{
+        display: none !important;
+    }}
     .main .block-container {{
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
+        max-width: 420px !important;
+        padding-top: 2.5rem !important;
     }}
-    .login-titulo, .login-sub {{ color: {COR_BRANCO} !important; text-align: center !important; }}
-    .login-titulo {{ font-size: 1.75rem !important; font-weight: 800 !important; }}
-    .login-sub {{ font-size: 1.15rem !important; }}
+    .main .block-container p,
+    .main .block-container label,
+    .main .block-container span {{
+        color: {COR_BRANCO} !important;
+    }}
+    .login-titulo, .login-sub {{
+        color: {COR_BRANCO} !important;
+        text-align: center !important;
+    }}
+    .login-titulo {{
+        font-size: 1.85rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.35rem !important;
+    }}
+    .login-sub {{
+        font-size: 1.15rem !important;
+        margin-bottom: 1.75rem !important;
+        opacity: 0.95;
+    }}
+    /* Campo senha — só uma caixa branca, sem moldura extra */
     div[data-testid="stTextInput"] {{
-        background: {COR_BRANCO} !important;
-        border-radius: 14px !important;
-        padding: 0.85rem !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin-bottom: 1rem !important;
     }}
-    div[data-testid="stButton"] button {{
+    div[data-testid="stTextInput"] label {{
+        display: none !important;
+    }}
+    div[data-testid="stTextInput"] > div {{
+        background: transparent !important;
+    }}
+    div[data-testid="stTextInput"] input {{
+        background: {COR_BRANCO} !important;
+        color: {COR_TEXTO} !important;
+        border: 3px solid {COR_LILAS} !important;
+        border-radius: 14px !important;
+        min-height: 3.5rem !important;
+        font-size: 1.2rem !important;
+        padding: 0.75rem 1rem !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+    }}
+    div[data-testid="stTextInput"] input::placeholder {{
+        color: #666 !important;
+    }}
+    div[data-testid="stButton"] > button {{
+        background: {COR_BRANCO} !important;
+        color: {cor} !important;
+        border: 3px solid {COR_LILAS} !important;
         min-height: 3.75rem !important;
-        font-size: 1.25rem !important;
+        font-size: 1.3rem !important;
+        font-weight: 800 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+    }}
+    div[data-testid="stButton"] > button:hover {{
+        background: {COR_LILAS_CLARO} !important;
+    }}
+    [data-testid="stAlert"] {{
+        background: rgba(255,255,255,0.95) !important;
+        border-radius: 12px !important;
+    }}
+    [data-testid="stCaptionContainer"] {{
+        display: none !important;
     }}
 </style>
 """,
