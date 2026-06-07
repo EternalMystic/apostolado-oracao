@@ -581,13 +581,14 @@ def botao_grande(label: str, key: str, *, type_btn: str = "secondary") -> bool:
 
 def cartao_visita(ordem: int, nome: str, endereco: str, km: str | None = None) -> None:
     km_html = f'<span class="visita-km">{km} km da parada anterior</span>' if km else ""
+    endereco_html = (endereco or "Endereço não cadastrado").replace("\n", "<br>")
     st.markdown(
         f"""
 <div class="visita-card">
   <div class="visita-num">{ordem}</div>
   <div class="visita-body">
     <h4>{nome}</h4>
-    <p>{endereco or "Endereço não cadastrado"}</p>
+    <p>{endereco_html}</p>
     {km_html}
   </div>
 </div>

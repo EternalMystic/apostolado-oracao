@@ -10,7 +10,7 @@ from typing import Any, Callable
 
 import httpx
 
-from utils.endereco import endereco_completo_de_registro, formatar_endereco_completo
+from utils.endereco import endereco_completo_de_registro, formatar_endereco_completo, mesclar_endereco_de_registro
 
 ENDERECO_PAROQUIA_PADRAO = (
     "Rua Salvador, 399, São Jorge, Nova Odessa, São Paulo, Brasil"
@@ -249,13 +249,20 @@ def resumo_distancias(
     linhas: list[dict[str, Any]],
     *,
     permitir_rede: bool = False,
+    membros: dict[int, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Para exibir km entre paradas consecutivas (só cache, salvo se permitir_rede)."""
     cache = _carregar_cache()
     out = []
     prev: tuple[float, float] | None = None
     for i, row in enumerate(linhas, start=1):
-        c = geocodificar(row, cache=cache, permitir_rede=permitir_rede)
+        fallback = None
+        if membros:
+            mid = int(row.get("membro_id") or 0)
+            fallback = membros.get(mid)
+        endereco = endereco_completo_de_registro(row, fallback, uma_linha=False)
+        row_mapa = {**row, **mesclar_endereco_de_registro(row, fallback)} if fallback else row
+        c = geocodificar(row_mapa, cache=cache, permitir_rede=permitir_rede)
         km = None
         if c and prev:
             km = round(distancia_km(prev, c), 1)
@@ -265,9 +272,9 @@ def resumo_distancias(
             {
                 "ordem": i,
                 "nome": row.get("membro_nome", ""),
-                "endereco": endereco_completo_de_registro(row),
+                "endereco": endereco,
                 "km_anterior": km,
-                "row": row,
+                "row": row_mapa,
             }
         )
     return out

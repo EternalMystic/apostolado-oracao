@@ -8,6 +8,22 @@ CIDADE_PADRAO = "Nova Odessa"
 UF_PADRAO = "SP"
 
 
+def _campo_limpo(val: Any) -> str:
+    if val is None:
+        return ""
+    if isinstance(val, float):
+        import math
+
+        if math.isnan(val):
+            return ""
+    s = str(val).strip()
+    if s.lower() in ("nan", "none", "nat", ""):
+        return ""
+    if re.match(r"^\d+\.0$", s):
+        s = str(int(float(s)))
+    return s
+
+
 def extrair_numero_da_rua(rua: str) -> tuple[str, str]:
     """Separa número no fim ou após vírgula (ex.: 'Rua X, 47')."""
     texto = (rua or "").strip()
@@ -37,17 +53,41 @@ def campos_endereco_de_registro(reg: dict[str, Any] | Any) -> dict[str, str]:
     """Lê campos de endereço de um membro (dict ou Series)."""
     if hasattr(reg, "to_dict"):
         reg = reg.to_dict()
-    rua = str(reg.get("rua") or reg.get("endereco") or "").strip()
-    numero = str(reg.get("numero") or "").strip()
+    rua = _campo_limpo(reg.get("rua") or reg.get("endereco"))
+    numero = _campo_limpo(reg.get("numero"))
     if not numero and rua:
         rua, numero = extrair_numero_da_rua(rua)
+    cidade = _campo_limpo(reg.get("cidade")) or CIDADE_PADRAO
     return {
-        "cep": str(reg.get("cep") or "").strip(),
+        "cep": _campo_limpo(reg.get("cep")),
         "rua": rua,
         "numero": numero,
-        "bairro": str(reg.get("bairro") or "").strip(),
-        "cidade": str(reg.get("cidade") or "").strip() or CIDADE_PADRAO,
+        "bairro": _campo_limpo(reg.get("bairro")),
+        "cidade": cidade,
     }
+
+
+def endereco_tem_logradouro(campos: dict[str, str]) -> bool:
+    return bool(campos.get("rua") or campos.get("bairro") or campos.get("cep"))
+
+
+def mesclar_endereco_de_registro(
+    principal: dict[str, Any],
+    fallback: dict[str, Any] | None = None,
+) -> dict[str, str]:
+    """Usa cadastro do membro quando a linha de entrega/visita está só com a cidade."""
+    cp = campos_endereco_de_registro(principal)
+    if not fallback:
+        return cp
+    cf = campos_endereco_de_registro(fallback)
+    if not endereco_tem_logradouro(cp) and endereco_tem_logradouro(cf):
+        return cf
+    out: dict[str, str] = {}
+    for k in ("cep", "rua", "numero", "bairro", "cidade"):
+        out[k] = cp[k] if cp[k] else cf[k]
+    if not out["cidade"]:
+        out["cidade"] = CIDADE_PADRAO
+    return out
 
 
 def formatar_endereco_completo(
@@ -76,13 +116,20 @@ def formatar_endereco_completo(
         partes.append(f"CEP {c}")
     if not partes:
         return ""
+    if len(partes) == 1 and partes[0] == CIDADE_PADRAO:
+        return ""
     sep = " · " if uma_linha else "\n"
     return sep.join(partes)
 
 
-def endereco_completo_de_registro(reg: dict[str, Any]) -> str:
-    c = campos_endereco_de_registro(reg)
-    return formatar_endereco_completo(**c)
+def endereco_completo_de_registro(
+    reg: dict[str, Any],
+    fallback: dict[str, Any] | None = None,
+    *,
+    uma_linha: bool = True,
+) -> str:
+    c = mesclar_endereco_de_registro(reg, fallback) if fallback else campos_endereco_de_registro(reg)
+    return formatar_endereco_completo(**c, uma_linha=uma_linha)
 
 
 def linha_entrega_visita_de_membro(reg: dict[str, Any]) -> dict[str, str]:

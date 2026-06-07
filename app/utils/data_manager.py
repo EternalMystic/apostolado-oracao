@@ -127,6 +127,19 @@ def _mapa_membros_por_id() -> dict[int, dict[str, str]]:
 def _migrar_planilha_endereco(
     df: pd.DataFrame, cols: list[str], mapa: dict[int, dict[str, str]]
 ) -> tuple[pd.DataFrame, bool]:
+    try:
+        from .endereco import (
+            _campo_limpo,
+            endereco_tem_logradouro,
+            mesclar_endereco_de_registro,
+        )
+    except ImportError:
+        from endereco import (
+            _campo_limpo,
+            endereco_tem_logradouro,
+            mesclar_endereco_de_registro,
+        )
+
     out = df.copy()
     mudou = False
     for c in cols:
@@ -137,9 +150,17 @@ def _migrar_planilha_endereco(
         mid_raw = pd.to_numeric(out.at[i, "membro_id"], errors="coerce")
         mid = int(mid_raw) if pd.notna(mid_raw) else 0
         mem = mapa.get(mid, {})
+        campos_linha = {k: _campo_limpo(out.at[i, k]) for k in COL_ENDERECO}
+
+        if not endereco_tem_logradouro(campos_linha) and mem:
+            mesclado = mesclar_endereco_de_registro(campos_linha, mem)
+            for k in COL_ENDERECO:
+                if mesclado.get(k) and str(out.at[i, k]).strip() != mesclado[k]:
+                    out.at[i, k] = mesclado[k]
+                    mudou = True
         for k in COL_ENDERECO:
-            if mem.get(k) and not str(out.at[i, k]).strip():
-                out.at[i, k] = mem[k]
+            if mem.get(k) and not _campo_limpo(out.at[i, k]):
+                out.at[i, k] = _campo_limpo(mem[k])
                 mudou = True
         obs = str(out.at[i, "observacoes"]).strip()
         bairro_mem = mem.get("bairro", "")
@@ -725,8 +746,32 @@ def preparar_entregas_editor(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def enriquecer_enderecos_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Preenche endereço das entregas/visitas a partir do cadastro de membros."""
+    if df.empty:
+        return df
+    try:
+        from .endereco import mesclar_endereco_de_registro
+    except ImportError:
+        from endereco import mesclar_endereco_de_registro
+
+    mapa = _mapa_membros_por_id()
+    out = df.copy()
+    for i in out.index:
+        mid_raw = pd.to_numeric(out.at[i, "membro_id"], errors="coerce")
+        mid = int(mid_raw) if pd.notna(mid_raw) else 0
+        mem = mapa.get(mid)
+        if not mem:
+            continue
+        mesclado = mesclar_endereco_de_registro(out.loc[i].to_dict(), mem)
+        for k in COL_ENDERECO:
+            out.at[i, k] = mesclado[k]
+    return out
+
+
 def ler_entregas() -> pd.DataFrame:
-    return preparar_entregas_editor(_ler_generico(SHEET_ENTREGAS, COL_ENTREGAS))
+    df = preparar_entregas_editor(_ler_generico(SHEET_ENTREGAS, COL_ENTREGAS))
+    return enriquecer_enderecos_df(df)
 
 
 def salvar_entregas(df: pd.DataFrame) -> None:

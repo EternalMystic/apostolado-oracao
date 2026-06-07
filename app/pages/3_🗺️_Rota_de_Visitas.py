@@ -14,7 +14,7 @@ from utils.colunas_ui import montar_column_config
 from utils.crud_ui import barra_excel_downloads_topo, barra_excel_pagina_custom, mesclar_por_id
 from utils.data_manager import COL_ENTREGAS, ler_config, ler_entregas, ler_membros, preparar_data_editor, preparar_dataframe, preparar_entregas_editor, salvar_entregas
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
-from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro
+from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro, mesclar_endereco_de_registro
 from utils.mapa_rotas import (
     ENDERECO_PAROQUIA_PADRAO,
     ordenar_por_proximidade,
@@ -197,7 +197,7 @@ else:
     if ver == "Lista para sair de casa":
         pendentes = df[df["entregue"].astype(str).str.upper() != "S"]
         lista = pendentes.to_dict("records") if not pendentes.empty else df.to_dict("records")
-        resumo = resumo_distancias(lista)
+        resumo = resumo_distancias(lista, membros=membros)
 
         st.caption(f"{len(lista)} visita(s) nesta lista")
         st.info(
@@ -206,9 +206,15 @@ else:
         )
 
         if len(lista) >= 2:
+            lista_mapa = [
+                {**r, **mesclar_endereco_de_registro(r, membros.get(int(r.get("membro_id") or 0)))}
+                if membros.get(int(r.get("membro_id") or 0))
+                else r
+                for r in lista
+            ]
             st.link_button(
                 "🚗 Abrir rota no Google Maps",
-                url_rota_google(lista),
+                url_rota_google(lista_mapa),
                 use_container_width=True,
             )
 
