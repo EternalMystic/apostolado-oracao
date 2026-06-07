@@ -5,16 +5,25 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from utils.auth import require_login
-from utils.ui import botao_grande, cartao_visita, inject_css
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from utils.colunas_ui import montar_column_config
 from utils.crud_ui import barra_excel_downloads_topo, barra_excel_pagina_custom, mesclar_por_id
-from utils.data_manager import COL_ENTREGAS, ler_config, ler_entregas, ler_membros, preparar_data_editor, preparar_dataframe, preparar_entregas_editor, salvar_entregas
+from utils.data_manager import (
+    COL_ENTREGAS,
+    ler_config,
+    ler_entregas,
+    ler_membros,
+    preparar_data_editor,
+    preparar_dataframe,
+    preparar_entregas_editor,
+    salvar_entregas,
+)
 from utils.dados_membros import ITENS_ENTREGA, ORDEM_BAIRROS
-from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro, mesclar_endereco_de_registro
+from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro
 from utils.mapa_rotas import (
     ENDERECO_PAROQUIA_PADRAO,
     ordenar_por_proximidade,
@@ -25,6 +34,7 @@ from utils.mapa_rotas import (
     url_waze,
 )
 from utils.opcoes import ENTREGUE
+from utils.ui import botao_grande, cartao_visita, inject_css
 
 st.set_page_config(
     page_title="Rota de Visitas",
@@ -206,15 +216,9 @@ else:
         )
 
         if len(lista) >= 2:
-            lista_mapa = [
-                {**r, **mesclar_endereco_de_registro(r, membros.get(int(r.get("membro_id") or 0)))}
-                if membros.get(int(r.get("membro_id") or 0))
-                else r
-                for r in lista
-            ]
             st.link_button(
                 "🚗 Abrir rota no Google Maps",
-                url_rota_google(lista_mapa),
+                url_rota_google(lista),
                 use_container_width=True,
             )
 

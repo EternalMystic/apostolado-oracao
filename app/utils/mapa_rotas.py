@@ -10,7 +10,11 @@ from typing import Any, Callable
 
 import httpx
 
-from utils.endereco import endereco_completo_de_registro, formatar_endereco_completo, mesclar_endereco_de_registro
+from utils.endereco import (
+    campos_endereco_de_registro,
+    endereco_completo_de_registro,
+    formatar_endereco_completo,
+)
 
 ENDERECO_PAROQUIA_PADRAO = (
     "Rua Salvador, 399, São Jorge, Nova Odessa, São Paulo, Brasil"
@@ -245,6 +249,30 @@ def url_rota_google(paradas: list[dict[str, Any]], *, max_paradas: int = 9) -> s
     return url
 
 
+def _mesclar_endereco_row(
+    row: dict[str, Any],
+    fallback: dict[str, Any] | None,
+) -> dict[str, str]:
+    """Mescla endereço da visita com o cadastro do membro (compatível com versões antigas)."""
+    try:
+        from utils.endereco import mesclar_endereco_de_registro
+
+        return mesclar_endereco_de_registro(row, fallback)
+    except ImportError:
+        cp = campos_endereco_de_registro(row)
+        if not fallback:
+            return cp
+        cf = campos_endereco_de_registro(fallback)
+        if not (cp.get("rua") or cp.get("bairro") or cp.get("cep")) and (
+            cf.get("rua") or cf.get("bairro") or cf.get("cep")
+        ):
+            return cf
+        out: dict[str, str] = {}
+        for k in ("cep", "rua", "numero", "bairro", "cidade"):
+            out[k] = cp[k] if cp[k] else cf[k]
+        return out
+
+
 def resumo_distancias(
     linhas: list[dict[str, Any]],
     *,
@@ -260,8 +288,11 @@ def resumo_distancias(
         if membros:
             mid = int(row.get("membro_id") or 0)
             fallback = membros.get(mid)
-        endereco = endereco_completo_de_registro(row, fallback, uma_linha=False)
-        row_mapa = {**row, **mesclar_endereco_de_registro(row, fallback)} if fallback else row
+        try:
+            endereco = endereco_completo_de_registro(row, fallback, uma_linha=False)
+        except TypeError:
+            endereco = endereco_completo_de_registro(row)
+        row_mapa = {**row, **_mesclar_endereco_row(row, fallback)} if fallback else row
         c = geocodificar(row_mapa, cache=cache, permitir_rede=permitir_rede)
         km = None
         if c and prev:
