@@ -1,7 +1,7 @@
 """Visual do Apostolado — neurodesign, acessível e claro no celular."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
 
 import streamlit as st
 
@@ -54,7 +54,7 @@ def ativar_modo_facil() -> None:
 
 
 def _saudacao() -> str:
-    h = date.today().hour
+    h = datetime.now().hour
     if h < 12:
         return "Bom dia"
     if h < 18:
