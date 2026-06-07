@@ -28,7 +28,7 @@ from utils.data_manager import (
 )
 from utils.endereco import endereco_completo_de_registro
 
-st.set_page_config(page_title="Relatórios", page_icon="📊", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Relatórios", page_icon="📊", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📊 Relatórios")

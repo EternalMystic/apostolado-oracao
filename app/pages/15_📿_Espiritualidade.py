@@ -14,7 +14,7 @@ from utils.data_manager import ler_intencoes_papa, salvar_intencoes_papa
 from utils.opcoes import DIVULGADA
 from utils.tabelas_apostolado import COL_INTENCOES_PAPA, OFERECIMENTO_DIARIO
 
-st.set_page_config(page_title="Espiritualidade", page_icon="📿", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Espiritualidade", page_icon="📿", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📿 Espiritualidade do Apostolado")

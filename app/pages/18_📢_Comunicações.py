@@ -14,7 +14,7 @@ from utils.data_manager import ler_comunicacoes, ler_config, ler_membros, salvar
 from utils.opcoes import TIPOS_COMUNICACAO
 from utils.tabelas_apostolado import COL_COMUNICACOES
 
-st.set_page_config(page_title="Comunicações", page_icon="📢", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Comunicações", page_icon="📢", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📢 Comunicações")

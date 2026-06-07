@@ -5,10 +5,10 @@ headless = true
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#FFFFFF"
-backgroundColor = "#4A148C"
-secondaryBackgroundColor = "#6A1B9A"
-textColor = "#FFFFFF"
+primaryColor = "#5B21B6"
+backgroundColor = "#F4F1FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1F2937"
 font = "sans serif"
 
 [client]

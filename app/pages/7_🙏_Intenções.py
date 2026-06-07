@@ -14,7 +14,7 @@ from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_INTENCOES, ler_intencoes, salvar_intencoes
 from utils.opcoes import CATEGORIA_INTENCAO, PRIORIDADE_INTENCAO, STATUS_INTENCAO
 
-st.set_page_config(page_title="Intenções", page_icon="🙏", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Intenções", page_icon="🙏", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("🙏 Mural de Oração")

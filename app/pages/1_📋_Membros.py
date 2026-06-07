@@ -16,7 +16,7 @@ from utils.data_manager import COL_MEMBROS, ler_membros_df, salvar_membros_df, l
 from utils.endereco import aplicar_filtro_endereco
 from utils.opcoes import CONSAGRADA, FITA_CONSAGRACAO, SEXOS, SITUACOES, TIPO_MEMBRO
 
-st.set_page_config(page_title="Membros", page_icon="📋", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Membros", page_icon="📋", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📋 Membros")

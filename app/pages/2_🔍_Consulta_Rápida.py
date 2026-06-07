@@ -16,7 +16,7 @@ st.set_page_config(
     page_title="Consulta Rápida",
     page_icon="🔍",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="collapsed",
 )
 require_login()
 inject_css()

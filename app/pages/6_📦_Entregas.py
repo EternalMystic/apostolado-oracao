@@ -17,7 +17,7 @@ from utils.dados_membros import ITENS_ENTREGA
 from utils.endereco import aplicar_filtro_endereco
 from utils.opcoes import ENTREGUE
 
-st.set_page_config(page_title="Entregas", page_icon="📦", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Entregas", page_icon="📦", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📦 Entregas")

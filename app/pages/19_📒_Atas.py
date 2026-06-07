@@ -14,7 +14,7 @@ from utils.data_manager import ler_reunioes, salvar_reunioes
 from utils.opcoes import TIPOS_REUNIAO
 from utils.tabelas_apostolado import COL_REUNIOES
 
-st.set_page_config(page_title="Atas", page_icon="📒", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Atas", page_icon="📒", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📒 Atas e Reuniões")

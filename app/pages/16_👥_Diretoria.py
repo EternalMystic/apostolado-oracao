@@ -14,7 +14,7 @@ from utils.data_manager import ler_diretoria, ler_membros, ler_zeladores, salvar
 from utils.opcoes import ATIVO_SN, CARGOS_DIRETORIA
 from utils.tabelas_apostolado import COL_DIRETORIA, COL_ZELADORES
 
-st.set_page_config(page_title="Diretoria", page_icon="👥", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Diretoria", page_icon="👥", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("👥 Diretoria e Zeladores")

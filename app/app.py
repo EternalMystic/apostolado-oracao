@@ -24,8 +24,9 @@ from utils.ui import (
     destaque_texto,
     hero_inicio,
     inject_css,
+    menu_mais_ferramentas,
+    resumo_metricas,
     rodape,
-    secao_titulo,
     sidebar_minima,
 )
 
@@ -33,13 +34,13 @@ st.set_page_config(
     page_title="Apostolado da Oração",
     page_icon="✝️",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="collapsed",
 )
 
 require_login()
 
 cfg = ler_config()
-cor = cfg.get("tema_cor", "#6A1B9A")
+cor = cfg.get("tema_cor", "#5B21B6")
 inject_css(cor)
 
 paroquia = cfg.get("paroquia", "Paróquia São Jorge")
@@ -51,18 +52,20 @@ hero_inicio(paroquia, cidade, date.today().strftime("%d/%m/%Y"))
 
 atalhos_principais()
 
-st.divider()
-secao_titulo("Resumo do dia", "📊")
+st.markdown("")
 
 totais = total_por_situacao()
 ativos = totais.get("Ativo", 0) + totais.get("Ativo (presumido)", 0)
 aniv = aniversariantes_proximos(7)
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Ativos", ativos)
-c2.metric("Aniversários (7 dias)", len(aniv))
-c3.metric("Zeladores", contar_zeladores_ativos())
-c4.metric("Centros", len(ler_centros()))
+resumo_metricas(
+    [
+        ("👥", "Membros ativos", str(ativos)),
+        ("🎂", "Aniversários (7 dias)", str(len(aniv))),
+        ("⭐", "Zeladores", str(contar_zeladores_ativos())),
+        ("🏛️", "Centros", str(len(ler_centros()))),
+    ]
+)
 
 papa = ler_intencoes_papa()
 if not papa.empty:
@@ -73,18 +76,20 @@ if not papa.empty:
     )
 
 if aniv:
-    secao_titulo("Próximos aniversários", "🎂")
+    st.markdown("#### 🎂 Próximos aniversários")
     for a in aniv:
-        linha = f"<strong>{a['nome']}</strong> · {a['proximo'].strftime('%d/%m')}"
+        linha = f"**{a['nome']}** · {a['proximo'].strftime('%d/%m')}"
         if a["dias"] == 0:
-            linha += " · <strong>Hoje 🎉</strong>"
+            linha += " · **Hoje** 🎉"
         tel = a.get("telefone") or ""
         if tel and "?" not in tel:
             num = "".join(c for c in tel if c.isdigit())
-            linha += f' · <a href="https://wa.me/55{num}" target="_blank">WhatsApp</a>'
-        st.markdown(linha, unsafe_allow_html=True)
+            linha += f' · [WhatsApp](https://wa.me/55{num})'
+        st.markdown(linha)
 
 if inconsistencias_criticas_abertas():
-    st.warning("Cadastro com pendências → **Inconsistências** no menu")
+    st.warning("Há pendências no cadastro. Abra **Inconsistências** no menu lateral (☰).")
+
+menu_mais_ferramentas()
 
 rodape()

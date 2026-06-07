@@ -13,7 +13,7 @@ from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_AGENDA, ler_agenda, salvar_agenda
 from utils.opcoes import TIPOS_AGENDA
 
-st.set_page_config(page_title="Agenda", page_icon="📅", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Agenda", page_icon="📅", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("📅 Agenda")

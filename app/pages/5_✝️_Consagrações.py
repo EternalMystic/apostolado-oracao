@@ -13,7 +13,7 @@ from utils.colunas_ui import montar_column_config
 from utils.crud_ui import tabela_crud
 from utils.data_manager import COL_CONSAGRACOES, ler_consagracoes, ler_membros, salvar_consagracoes
 
-st.set_page_config(page_title="Consagrações", page_icon="✝️", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Consagrações", page_icon="✝️", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("✝️ Consagrações")

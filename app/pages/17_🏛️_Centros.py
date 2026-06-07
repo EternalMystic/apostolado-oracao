@@ -15,7 +15,7 @@ from utils.data_manager import ler_centros, ler_membros_df, listar_comunidades, 
 from utils.opcoes import ATIVO_SN
 from utils.tabelas_apostolado import COL_CENTROS
 
-st.set_page_config(page_title="Centros", page_icon="🏛️", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Centros", page_icon="🏛️", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("🏛️ Centros Pastorais")

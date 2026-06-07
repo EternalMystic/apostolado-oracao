@@ -17,7 +17,7 @@ from utils.dados_membros import ITENS_ENTREGA
 from utils.endereco import aplicar_filtro_endereco, linha_entrega_visita_de_membro
 from utils.opcoes import REALIZADA, TIPOS_VISITA
 
-st.set_page_config(page_title="Visitas", page_icon="🏠", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="Visitas", page_icon="🏠", layout="wide", initial_sidebar_state="collapsed")
 require_login()
 inject_css()
 st.title("🏠 Visitas domiciliares")
