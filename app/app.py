@@ -17,10 +17,17 @@ from utils.data_manager import (
     ler_centros,
     ler_config,
     ler_intencoes_papa,
-    membros_sem_telefone,
     total_por_situacao,
 )
-from utils.ui import atalhos_principais, inject_css, rodape, sidebar_minima
+from utils.ui import (
+    atalhos_principais,
+    destaque_texto,
+    hero_inicio,
+    inject_css,
+    rodape,
+    secao_titulo,
+    sidebar_minima,
+)
 
 st.set_page_config(
     page_title="Apostolado da Oração",
@@ -35,18 +42,17 @@ cfg = ler_config()
 cor = cfg.get("tema_cor", "#6A1B9A")
 inject_css(cor)
 
-sidebar_minima(
-    cfg.get("paroquia", "Paróquia São Jorge"),
-    f"{cfg.get('cidade', 'Nova Odessa')} – SP",
-)
+paroquia = cfg.get("paroquia", "Paróquia São Jorge")
+cidade = f"{cfg.get('cidade', 'Nova Odessa')} – SP"
 
-st.title("Início")
-st.markdown(f"**{date.today().strftime('%d/%m/%Y')}**")
+sidebar_minima(paroquia, cidade)
+
+hero_inicio(paroquia, cidade, date.today().strftime("%d/%m/%Y"))
 
 atalhos_principais()
 
 st.divider()
-st.markdown("### Resumo")
+secao_titulo("Resumo do dia", "📊")
 
 totais = total_por_situacao()
 ativos = totais.get("Ativo", 0) + totais.get("Ativo (presumido)", 0)
@@ -61,21 +67,22 @@ c4.metric("Centros", len(ler_centros()))
 papa = ler_intencoes_papa()
 if not papa.empty:
     ult = papa.sort_values(["ano", "mes"], ascending=False).iloc[0]
-    st.markdown(
-        f"**Oração do Papa** ({int(ult['mes'])}/{int(ult['ano'])}): {ult.get('titulo', '')}"
+    destaque_texto(
+        f"<strong>Oração do Papa</strong> ({int(ult['mes'])}/{int(ult['ano'])}): "
+        f"{ult.get('titulo', '')}"
     )
 
 if aniv:
-    st.markdown("#### Próximos aniversários")
+    secao_titulo("Próximos aniversários", "🎂")
     for a in aniv:
-        linha = f"**{a['nome']}** · {a['proximo'].strftime('%d/%m')}"
+        linha = f"<strong>{a['nome']}</strong> · {a['proximo'].strftime('%d/%m')}"
         if a["dias"] == 0:
-            linha += " · **Hoje**"
+            linha += " · <strong>Hoje 🎉</strong>"
         tel = a.get("telefone") or ""
         if tel and "?" not in tel:
             num = "".join(c for c in tel if c.isdigit())
-            linha += f" · [WhatsApp](https://wa.me/55{num})"
-        st.markdown(linha)
+            linha += f' · <a href="https://wa.me/55{num}" target="_blank">WhatsApp</a>'
+        st.markdown(linha, unsafe_allow_html=True)
 
 if inconsistencias_criticas_abertas():
     st.warning("Cadastro com pendências → **Inconsistências** no menu")

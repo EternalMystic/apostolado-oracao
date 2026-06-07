@@ -93,20 +93,28 @@ with a1:
         st.rerun()
 with a2:
     if botao_grande("📍 Ordenar pelo mapa", "rota_mapa", type_btn="primary"):
-        with st.spinner("Consultando mapa…"):
-            linhas = df_full.to_dict("records")
-            ordenadas, avisos = ordenar_por_proximidade(
-                linhas, ponto_partida=partida, apenas_pendentes=False
+        linhas = df_full.to_dict("records")
+        barra = st.progress(0.0, text="Consultando mapa…")
+
+        def _progresso(atual: int, total: int, nome: str) -> None:
+            barra.progress(min(1.0, atual / max(total, 1)), text=f"Consultando mapa… {atual}/{total}: {nome}")
+
+        ordenadas, avisos = ordenar_por_proximidade(
+            linhas,
+            ponto_partida=partida,
+            apenas_pendentes=False,
+            ao_avancar=_progresso,
+        )
+        barra.progress(1.0, text="Mapa pronto")
+        novo = preparar_entregas_editor(pd.DataFrame(ordenadas))
+        salvar_entregas(
+            preparar_dataframe(
+                novo,
+                COL_ENTREGAS,
+                id_col="id",
+                colunas_data=["data_entrega"],
             )
-            novo = preparar_entregas_editor(pd.DataFrame(ordenadas))
-            salvar_entregas(
-                preparar_dataframe(
-                    novo,
-                    COL_ENTREGAS,
-                    id_col="id",
-                    colunas_data=["data_entrega"],
-                )
-            )
+        )
         if avisos:
             for msg in avisos[:8]:
                 st.warning(msg)
@@ -121,13 +129,19 @@ st.metric("Visitas ainda não feitas", pendentes_total)
 with st.expander("Filtrar por endereço", expanded=False):
     f1, f2 = st.columns(2)
     with f1:
-        filtro_cep = st.text_input("CEP", key="rota_f_cep", placeholder="13380")
+        filtro_cep = st.text_input("CEP", key="rota_f_cep", placeholder="Ex.: 13380")
         bairros = sorted({str(m.get("bairro", "")).strip() for m in membros_ativos if m.get("bairro")})
         filtro_bairro = st.selectbox("Bairro", ["Todos"] + bairros, key="rota_f_bairro")
     with f2:
         filtro_rua = st.text_input("Rua", key="rota_f_rua")
         cidades = sorted({str(m.get("cidade", "")).strip() for m in membros_ativos if m.get("cidade")})
         filtro_cidade = st.selectbox("Cidade", ["Todos"] + cidades, key="rota_f_cidade")
+    if st.button("Limpar filtros", key="rota_limpar_filtro"):
+        st.session_state["rota_f_cep"] = ""
+        st.session_state["rota_f_rua"] = ""
+        st.session_state["rota_f_bairro"] = "Todos"
+        st.session_state["rota_f_cidade"] = "Todos"
+        st.rerun()
 
 filtrado = any(
     [
@@ -167,8 +181,11 @@ if filtrado:
         st.warning("Filtro ligado: ao salvar, só muda o que aparece aqui.")
 
 if df.empty:
-    st.markdown("### Nenhuma visita na lista")
-    st.markdown("Toque em **Montar lista dos ativos** para começar.")
+    if filtrado and not df_full.empty:
+        st.warning("Nenhuma visita com esse filtro. Limpe o CEP ou escolha **Todos** nos menus.")
+    else:
+        st.markdown("### Nenhuma visita na lista")
+        st.markdown("Toque em **Montar lista dos ativos** para começar.")
 else:
     ver = st.radio(
         "Como ver",
@@ -181,6 +198,12 @@ else:
         pendentes = df[df["entregue"].astype(str).str.upper() != "S"]
         lista = pendentes.to_dict("records") if not pendentes.empty else df.to_dict("records")
         resumo = resumo_distancias(lista)
+
+        st.caption(f"{len(lista)} visita(s) nesta lista")
+        st.info(
+            "A lista aparece na hora. Toque em **Ordenar pelo mapa** para reorganizar "
+            "do mais perto ao mais longe (pode levar alguns minutos na primeira vez)."
+        )
 
         if len(lista) >= 2:
             st.link_button(

@@ -35,14 +35,16 @@ def require_login() -> None:
 
     inject_login_css()
 
+    st.markdown('<p class="login-emblema">✝️</p>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="login-titulo">✝️ Apostolado da Oração</p>',
+        '<p class="login-titulo">Apostolado da Oração</p>',
         unsafe_allow_html=True,
     )
     st.markdown(
         '<p class="login-sub">Paróquia São Jorge · Nova Odessa – SP</p>',
         unsafe_allow_html=True,
     )
+    st.markdown('<div class="login-linha"></div>', unsafe_allow_html=True)
 
     entrada = st.text_input(
         "Senha",

@@ -6,7 +6,7 @@ import math
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 
@@ -93,7 +93,10 @@ def geocodificar_texto(
 
 
 def geocodificar(
-    reg: dict[str, Any], *, cache: dict[str, dict[str, Any]] | None = None
+    reg: dict[str, Any],
+    *,
+    cache: dict[str, dict[str, Any]] | None = None,
+    permitir_rede: bool = True,
 ) -> tuple[float, float] | None:
     """Latitude/longitude via Nominatim (gratuito, como base do OpenStreetMap)."""
     query = montar_query(reg)
@@ -103,6 +106,10 @@ def geocodificar(
     cache = cache if cache is not None else _carregar_cache()
     if chave in cache and cache[chave].get("lat") is not None:
         return float(cache[chave]["lat"]), float(cache[chave]["lon"])
+    if chave in cache and cache[chave].get("lat") is None:
+        return None
+    if not permitir_rede:
+        return None
 
     try:
         r = httpx.get(
@@ -141,6 +148,7 @@ def ordenar_por_proximidade(
     *,
     ponto_partida: str | None = None,
     apenas_pendentes: bool = True,
+    ao_avancar: Callable[[int, int, str], None] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """
     Ordena visitas do mais perto ao mais longe (vizinho mais próximo).
@@ -149,6 +157,16 @@ def ordenar_por_proximidade(
     avisos: list[str] = []
     cache = _carregar_cache()
     partida_txt = (ponto_partida or ENDERECO_PAROQUIA_PADRAO).strip()
+
+    candidatas = [
+        r
+        for r in linhas
+        if not (apenas_pendentes and str(r.get("entregue", "N")).upper() == "S")
+    ]
+    total = len(candidatas) + 1
+
+    if ao_avancar:
+        ao_avancar(0, total, "Paróquia")
     origem = geocodificar_texto(partida_txt, cache=cache)
     if not origem:
         avisos.append("Não foi possível localizar o ponto de partida (paróquia). Usando primeira visita.")
@@ -156,9 +174,9 @@ def ordenar_por_proximidade(
 
     sem_mapa: list[dict[str, Any]] = []
     trabalho: list[tuple[dict[str, Any], tuple[float, float]]] = []
-    for row in linhas:
-        if apenas_pendentes and str(row.get("entregue", "N")).upper() == "S":
-            continue
+    for i, row in enumerate(candidatas, start=1):
+        if ao_avancar:
+            ao_avancar(i, total, str(row.get("membro_nome", "membro")))
         coords = geocodificar(row, cache=cache)
         if coords:
             trabalho.append((row, coords))
@@ -208,33 +226,36 @@ def url_waze(ponto: dict[str, Any]) -> str:
 
 def url_rota_google(paradas: list[dict[str, Any]], *, max_paradas: int = 9) -> str:
     """Rota com várias paradas no Google Maps (limite de waypoints na URL)."""
-    cache = _carregar_cache()
-    coords: list[tuple[float, float]] = []
+    enderecos: list[str] = []
     for p in paradas[: max_paradas + 2]:
-        c = geocodificar(p, cache=cache)
-        if c:
-            coords.append(c)
-    if len(coords) < 2:
+        q = montar_query(p) or endereco_completo_de_registro(p)
+        if q:
+            enderecos.append(q)
+    if len(enderecos) < 2:
         if paradas:
             return url_google_maps(paradas[0])
         return "https://www.google.com/maps"
-    origem = f"{coords[0][0]},{coords[0][1]}"
-    destino = f"{coords[-1][0]},{coords[-1][1]}"
-    meio = coords[1:-1]
+    origem = urllib.parse.quote(enderecos[0])
+    destino = urllib.parse.quote(enderecos[-1])
     url = f"https://www.google.com/maps/dir/?api=1&origin={origem}&destination={destino}&travelmode=driving"
+    meio = enderecos[1:-1]
     if meio:
-        wp = "|".join(f"{a},{b}" for a, b in meio)
-        url += "&waypoints=" + urllib.parse.quote(wp, safe=",|")
+        wp = "|".join(urllib.parse.quote(e) for e in meio)
+        url += "&waypoints=" + wp
     return url
 
 
-def resumo_distancias(linhas: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Para exibir km entre paradas consecutivas."""
+def resumo_distancias(
+    linhas: list[dict[str, Any]],
+    *,
+    permitir_rede: bool = False,
+) -> list[dict[str, Any]]:
+    """Para exibir km entre paradas consecutivas (só cache, salvo se permitir_rede)."""
     cache = _carregar_cache()
     out = []
     prev: tuple[float, float] | None = None
     for i, row in enumerate(linhas, start=1):
-        c = geocodificar(row, cache=cache)
+        c = geocodificar(row, cache=cache, permitir_rede=permitir_rede)
         km = None
         if c and prev:
             km = round(distancia_km(prev, c), 1)
